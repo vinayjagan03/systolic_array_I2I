@@ -12,13 +12,14 @@ module processing_element (
     output logic stall
 );
 
-    typedef enum logic[1:0] { start, mult, sum, send } state_t;
+    typedef enum logic[1:0] { start, mult, send } state_t;
 
     state_t current_state, next_state;
 
-    word_t fp32_result;
+    word_t fp32_result, next_fp32_result;
     logic fp32_ready;
     logic start_mac;
+    word_t psum_reg, next_psum_reg;
 
     fp32 multiplier (
         .clk(clk),
@@ -28,18 +29,22 @@ module processing_element (
         .c(psum_reg),
         .start_mac(start_mac),
         .ready(fp32_ready),
-        .result(fp32_result)
+        .result(next_fp32_result)
     );
-
-    word_t psum_reg, next_psum_reg;
 
     always_ff @(posedge clk or negedge n_rst) begin
         if (!n_rst) begin
             current_state <= start;
             psum_reg <= '0;
+            fp32_result <= 0;
+            x_o <= 0;
+            w_o <= 0;
         end else begin
             current_state <= next_state;
             psum_reg <= next_psum_reg;
+            fp32_result <= next_fp32_result;
+            x_o <= (next_state == send) ? x_i : x_o;
+            w_o <= (next_state == send) ? w_i : w_o;
         end
     end
 
@@ -54,10 +59,7 @@ module processing_element (
             end
             mult: begin
                 if (fp32_ready)
-                    next_state = sum;
-            end
-            sum: begin
-                next_state = send;
+                    next_state = send;
             end
             send: begin
                 if (input_start)
@@ -73,27 +75,23 @@ module processing_element (
 
     always_comb begin
         partial_sum = 0;
-        x_o = x_i;
-        w_o = w_i;
         data_ready = 0;
         stall = 1;
+        start_mac = 0;
+        next_psum_reg = psum_reg;
 
         case (current_state)
             start: begin
-                stall = 1'b0;
+                stall = input_start;
             end
             mult: begin
                 stall = 1'b1;
-            end
-            sum: begin
-                stall = 1'b1;
+                start_mac = 1'b1;
             end
             send: begin
-                partial_sum = mult_result; // Output the computed partial sum
+                next_psum_reg = fp32_result;
+                partial_sum = fp32_result; // Output the computed partial sum
                 data_ready = 1'b1;
-                stall = 1'b0;
-            end
-            default: begin
                 stall = 1'b0;
             end
         endcase
