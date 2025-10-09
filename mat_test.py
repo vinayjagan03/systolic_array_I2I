@@ -1,8 +1,8 @@
 import numpy as np
 import os
 
-mat1 = np.random.randint(0, 2**30, (4, 4))
-mat2 = np.random.randint(0, 2**30, (4, 4))
+mat1 = [[1,2,3,4],[5,6,7,8],[9,10,11,12],[13,14,15,16]] #np.random.randint(0, 2**30, (4, 4))
+mat2 = np.identity(4) #np.random.randint(0, 2**30, (4, 4))
 
 #print(mat1, mat2, np.dot(mat1, mat2))
 
