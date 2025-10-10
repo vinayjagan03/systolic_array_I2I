@@ -13,17 +13,19 @@
 
 systolic_array.sim:
 	vlog -compile_uselibs -cover bs -sv -pedanticerrors -lint +incdir+./src/include/ \
+		 ./src/modules/fp32_add.sv ./src/modules/fp32_mul.sv ./src/modules/fp32_mac.sv \
 	     ./src/modules/processing_element.sv \
 	     ./src/modules/systolic_array.sv \
-	     ./src/testbench/tb_systolic_array.sv ./src/testbench/systolic_array_bind.sv
+	     ./src/testbench/tb_systolic_array.sv 
 
 	vsim -coverage -c -voptargs="+acc" tb_systolic_array -do  "run -all; quit"
 
 systolic_array.wav:
 	vlog -compile_uselibs -cover bs -sv -pedanticerrors -lint +incdir+./src/include/ \
+		 ./src/modules/fp32_add.sv ./src/modules/fp32_mul.sv ./src/modules/fp32_mac.sv \
 	     ./src/modules/processing_element.sv \
 	     ./src/modules/systolic_array.sv \
-	     ./src/testbench/tb_systolic_array.sv ./src/testbench/systolic_array_bind.sv
+	     ./src/testbench/tb_systolic_array.sv 
 
 	vsim -coverage -voptargs="+acc" tb_systolic_array -do "view objects; do ./waveforms/wave.do; run -all;"
 
