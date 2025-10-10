@@ -22,9 +22,13 @@ module tb_systolic_array;
     );
 
     // Clock generation
+    integer cycle_count;
+
     initial begin
         clk = 0;
+        cycle_count = 0;
         forever #(CLK_PERIOD/2) clk = ~clk;
+        forever @(posedge clk) cycle_count = cycle_count+1;;
     end
 
     integer fd;
@@ -49,7 +53,7 @@ module tb_systolic_array;
         n_rst = 1;
         start = 1;
         $display("Reset released");
-        for (int i = 0; i < 2*N + 2; i++) begin
+        for (int i = 0; i < 2*N + N-1; i++) begin
             if (i < 2*N) begin
                 $fread(x_in, fd);
                 $fread(w_in, fd);
@@ -62,18 +66,47 @@ module tb_systolic_array;
                 @(posedge clk); 
                 @(negedge clk);
             end
-            $display("Cycle %0d: x_in = %p, w_in = %p, y_out = %p", i + 1, x_in, w_in, y_out);
-            $display("psum reg: %p", dut.psum);
-            $display("x: %p", dut.x);
-            $display("w: %p", dut.w);
+            $display("\nCycle %0d", i+1);
+            $write("x_in: ");
+            for (int j = 0; j < N; j++) begin
+                $write("%08p ", $bitstoshortreal(x_in[j]));
+            end
+            $write("\nw_in: ");
+            for (int j = 0; j < N; j++) begin
+                $write("%08p ", $bitstoshortreal(w_in[j]));
+            end
+            $write("\nx: ");
+            for (int j = 0; j < N*N; j++) begin
+                if (j%N == 0) begin
+                    $display("");
+                end
+                $write("%08p ", $bitstoshortreal(dut.x[j / N][j % N]));
+            end
+            $write("\nw: ");
+            for (int j = 0; j < N*N; j++) begin
+                if (j%N == 0) begin
+                    $display("");
+                end
+                $write("%08p ", $bitstoshortreal(dut.w[j / N][j % N]));
+            end
+            $write("\npsum: ");
+            for (int j = 0; j < N*N; j++) begin
+                if (j%N == 0) begin
+                    $display("");
+                end
+                $write("%08p ", $bitstoshortreal(dut.psum[j / N][j % N]));
+            end
+            $display("");
         end
         while (stall) @(posedge clk);
         $fclose(fd);
 
+        $display("Cycle count %d", cycle_count);
+
         fd = $fopen("output_actual.bin", "wb");
         for (int i = 0; i < N; i++) begin
             for (int j = 0; j < N; j++) begin
-                $display("%p", dut.psum[i][j]);
+                //$display("%p", $bitstoshortreal(dut.psum[i][j]));
                 $fwrite(fd, "%u", dut.psum[i][j]);
             end
         end

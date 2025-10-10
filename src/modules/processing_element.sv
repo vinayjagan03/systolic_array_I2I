@@ -21,16 +21,19 @@ module processing_element (
     logic start_mac;
     word_t psum_reg, next_psum_reg;
 
-    fp32 multiplier (
-        .clk(clk),
-        .n_rst(n_rst),
-        .a(x_i),
-        .b(w_i),
-        .c(psum_reg),
-        .start_mac(start_mac),
-        .ready(fp32_ready),
-        .result(next_fp32_result)
-    );
+    fp32_mac u_fp32_mac (
+        .clk          (clk),
+        .rst_n        (n_rst),
+        .valid_in     (start_mac),
+        // always 1
+        .a            (x_i),
+        .b            (w_i),
+        .c            (psum_reg),
+        .use_acc      (0),
+        .clr_acc      (0),
+        .valid_out    (fp32_ready),
+        .y            (next_fp32_result)
+        );
 
     always_ff @(posedge clk or negedge n_rst) begin
         if (!n_rst) begin
@@ -83,16 +86,18 @@ module processing_element (
         case (current_state)
             start: begin
                 stall = input_start;
+                start_mac = input_start;
             end
             mult: begin
                 stall = 1'b1;
-                start_mac = 1'b1;
             end
             send: begin
                 next_psum_reg = fp32_result;
                 partial_sum = fp32_result; // Output the computed partial sum
                 data_ready = 1'b1;
                 stall = 1'b0;
+                if (input_start)
+                    start_mac = 1'b1;
             end
         endcase
     end
