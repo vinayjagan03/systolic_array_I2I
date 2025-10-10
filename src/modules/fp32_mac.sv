@@ -3,8 +3,6 @@
 // Synthesizable FP32 MAC: y = a*b + c  OR  acc <= acc + a*b (use_acc=1)
 // Pipes: mul=2, add=3  => ~5 cycles latency
 // -----------------------------------------------------------------------------
-`include "fp32_mul.sv"
-`include "fp32_add.sv"
 module fp32_mac (
   input  wire        clk,
   input  wire        rst_n,
