@@ -8,7 +8,7 @@ module controller (
     output logic AWREADY,
     // Write signals
     input logic WDVALID,
-    output word_t WDATA,
+    input word_t WDATA,
     output logic WDREADY,
     // Address read signals
     input logic ARVALID,
@@ -21,6 +21,8 @@ module controller (
     // Scratchpad signals
     output logic sc_read_en,
     output logic sc_write_en,
+    input logic sc_data_in,
+    output logic sc_data_out,
     output logic sc_addr,
     input logic sc_ready,
     // sys array signals
@@ -55,7 +57,7 @@ module controller (
                     next_state = sc_read;
                 else if (AWVALID && AWADDR[23:20] == 0 && AWADDR[19:16] == 4'hF)
                     next_state = setup_matmul;
-                else if (AWVALID && AWADDR[23:20] == 0x1)
+                else if (AWVALID && AWADDR[23:20] == 4'h1)
                     next_state = matmul;
                 else if (AWVALID)
                     next_state = sc_write;
@@ -80,6 +82,7 @@ module controller (
         sc_addr = 0;
         ARREADY = 1'b0;
         AWREADY = 1'b0;
+        WDREADY = 1'b0;
         start_matmul = 1'b0;
 
         case (state)
@@ -98,8 +101,10 @@ module controller (
             sc_write: begin
                 sc_write_en = 1'b1;
                 sc_addr = AWADDR;
+                WDREADY = 1'b1;
             end
             setup_matmul: begin
+                WDREADY = 1'b1;
             end
             matmul: begin
                 start_matmul = 1'b1;

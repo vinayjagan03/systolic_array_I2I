@@ -58,18 +58,24 @@ module fp32_mul #(
   // Stage 2 regs
   reg         v2;
   reg [31:0]  y2;
+  reg [31:0] out_word;
+  reg [8:0]  exp_n;
+  reg [22:0] frac_n;
 
   always @(posedge clk or negedge rst_n) begin
-    reg [31:0] out_word;
-    reg [8:0]  exp_n;
-    reg [22:0] frac_n;
-
     if (!rst_n) begin
       v2 <= 1'b0;
       y2 <= 32'h0000_0000;
     end else begin
       v2 <= v1;
+      y2 <= out_word;
+    end
+  end
+
+  always_comb begin
       out_word = 32'h0000_0000;
+      exp_n = 0;
+      frac_n = 0;
 
       // Zero handling
       if (s1_a_zero || s1_b_zero || (s1_prod == 48'd0)) begin
@@ -92,9 +98,6 @@ module fp32_mul #(
         else
           out_word = {s1_sign, exp_n[7:0], frac_n};
       end
-
-      y2 <= out_word;
-    end
   end
 
   assign valid_out = v2;

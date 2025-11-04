@@ -62,6 +62,8 @@ module tb_systolic_array;
                 w_in = 0;
             end
             @(negedge clk);
+            @(posedge clk);
+            @(negedge clk);
             while (stall) begin 
                 @(posedge clk); 
                 @(negedge clk);
@@ -97,6 +99,7 @@ module tb_systolic_array;
                 $write("%08p ", $bitstoshortreal(dut.psum[j / N][j % N]));
             end
             $display("");
+            $display("count: %d", dut.row[N-1].col[N-1].pe.count);
         end
         while (stall) @(posedge clk);
         $fclose(fd);

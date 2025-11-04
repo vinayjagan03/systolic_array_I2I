@@ -107,14 +107,13 @@ module fp32_add #(
   // leading-zero count for 29-bit value (simple loop; synthesizes as priority enc)
 function [4:0] lz29;
   input [28:0] x;
-  integer i;
   begin
     if (x[28]) begin
       lz29 = 5'd0;    // MSB already 1 → no leading zeros
     end
     else begin
       lz29 = 5'd29;   // default: all zero
-      for_loop_end: for (i = 27; i >= 0; i = i-1) begin
+      for_loop_end: for (int i = 27; i >= 0; i = i-1) begin
         if (x[i]) begin
           lz29 = 5'(28 - i); // # of zeros before first '1'
           disable for_loop_end; // exit early once found
@@ -124,19 +123,29 @@ function [4:0] lz29;
   end
 endfunction
 
-
-  always @(posedge clk or negedge rst_n) begin
     reg [31:0] out_word;
     reg [28:0] mant;
     reg [7:0]  expn;
     reg [22:0] frac;
     reg [4:0]  lz;
+
+
+  always_ff @(posedge clk or negedge rst_n) begin
     if (!rst_n) begin
       v3 <= 1'b0;
       y3 <= 32'h0000_0000;
     end else begin
       v3 <= v2;
+      y3 <= out_word;
+    end
+  end
+
+  always_comb begin
       out_word = 32'h0000_0000;
+      mant = 0;
+      expn = 0;
+      lz = 0;
+      frac = 0;
 
       if (s2_is_zero) begin
         out_word = {s2_sign, 31'h0};
@@ -171,8 +180,7 @@ endfunction
         else
           out_word = {s2_sign, expn, frac};
       end
-      y3 <= out_word;
-    end
+
   end
 
   assign valid_out = v3;

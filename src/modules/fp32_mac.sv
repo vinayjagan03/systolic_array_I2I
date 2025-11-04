@@ -37,9 +37,9 @@ module fp32_mac (
   reg [31:0] acc_q;
   always @(posedge clk or negedge rst_n) begin
     if (!rst_n)
-      acc_q <= 32'h0000_0000;
+      acc_q <= 32'h00000000;
     else if (clr_acc)
-      acc_q <= 32'h0000_0000;
+      acc_q <= 32'h00000000;
     else if (use_acc && valid_out)
       acc_q <= y; // update with adder result when it becomes valid
   end
@@ -48,7 +48,7 @@ module fp32_mac (
   reg  [31:0] add_lhs, add_rhs;
   wire        add_vin = m_vld;
 
-  always @* begin
+  always_comb begin
     if (use_acc) begin
       add_lhs = acc_q;
       add_rhs = m_res;

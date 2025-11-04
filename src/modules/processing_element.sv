@@ -1,6 +1,6 @@
 `include "systolic_array_pkg.svh"
 
-module processing_element (
+module processing_element #(parameter N=4)(
     input logic clk, n_rst,
     input word_t x_i,
     input word_t w_i,
@@ -20,6 +20,8 @@ module processing_element (
     logic fp32_ready;
     logic start_mac;
     word_t psum_reg, next_psum_reg;
+
+    word_t count, next_count;
 
     fp32_mac u_fp32_mac (
         .clk          (clk),
@@ -42,12 +44,14 @@ module processing_element (
             fp32_result <= 0;
             x_o <= 0;
             w_o <= 0;
+            count <= 0;
         end else begin
             current_state <= next_state;
             psum_reg <= next_psum_reg;
             fp32_result <= next_fp32_result;
             x_o <= (next_state == send) ? x_i : x_o;
             w_o <= (next_state == send) ? w_i : w_o;
+            count <= next_count;
         end
     end
 
@@ -82,10 +86,11 @@ module processing_element (
         stall = 1;
         start_mac = 0;
         next_psum_reg = psum_reg;
+        next_count = count;
 
         case (current_state)
             start: begin
-                stall = input_start;
+                stall = 1'b0;
                 start_mac = input_start;
             end
             mult: begin
@@ -98,6 +103,7 @@ module processing_element (
                 stall = 1'b0;
                 if (input_start)
                     start_mac = 1'b1;
+                next_count = count + 1;
             end
         endcase
     end
