@@ -116,7 +116,8 @@ function [4:0] lz29;
       for_loop_end: for (int i = 27; i >= 0; i = i-1) begin
         if (x[i]) begin
           lz29 = 5'(28 - i); // # of zeros before first '1'
-          disable for_loop_end; // exit early once found
+          break;
+          //disable for_loop_end; // exit early once found
         end
       end
     end
