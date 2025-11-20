@@ -75,7 +75,7 @@ module top #(parameter N = 64)(
 );
 
 systolic_array_top #(
-    .N                         (4)
+    .N                         (N)
 ) u_systolic_array_top (
     .clk                       (clk),
     .n_rst                     (n_rst),
