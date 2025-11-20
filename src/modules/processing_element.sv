@@ -31,8 +31,8 @@ module processing_element #(parameter N=4)(
         .a            (x_i),
         .b            (w_i),
         .c            (psum_reg),
-        .use_acc      (0),
-        .clr_acc      (0),
+        .use_acc      (1'b0),
+        .clr_acc      (1'b0),
         .valid_out    (fp32_ready),
         .y            (next_fp32_result)
         );
@@ -81,7 +81,7 @@ module processing_element #(parameter N=4)(
     end
 
     always_comb begin
-        partial_sum = 0;
+        partial_sum = psum_reg;
         data_ready = 0;
         stall = 1;
         start_mac = 0;
@@ -97,8 +97,8 @@ module processing_element #(parameter N=4)(
                 stall = 1'b1;
             end
             send: begin
-                next_psum_reg = fp32_result;
-                partial_sum = fp32_result; // Output the computed partial sum
+                partial_sum = next_fp32_result;
+                next_psum_reg = next_fp32_result;
                 data_ready = 1'b1;
                 stall = 1'b0;
                 if (input_start)

@@ -5,6 +5,7 @@ module systolic_array #(parameter N=4) (
     input logic start,
     input word_t [N-1:0] x_in,
     input word_t [N-1:0] w_in,
+    input logic [$clog2(N)-1:0] y_index,
     output word_t [N-1:0] y_out,
     output logic stall
 );
@@ -25,7 +26,7 @@ module systolic_array #(parameter N=4) (
                     .n_rst(n_rst),
                     .x_i(j == 0 ? x_in[i] : x[i][j - 1]),
                     .w_i(i == 0 ? w_in[j] : w[i - 1][j]),
-                    .input_start(i == 0 && j == 0 ? start : (i > 0 && data_ready[i - 1][j]) || (j > 0 && data_ready[i][j - 1])),
+                    .input_start(i == 0 || j == 0 ? start : data_ready[i][j - 1] && data_ready[i - 1][j]),
                     .partial_sum(psum[i][j]),
                     .x_o(x[i][j]),
                     .w_o(w[i][j]),
@@ -36,7 +37,7 @@ module systolic_array #(parameter N=4) (
         end
     endgenerate
 
-    assign y_out = psum[N-1];
-    assign stall = |pe_stall;
+    assign y_out = psum[y_index];
+    assign stall = |pe_stall[0];
 
 endmodule
