@@ -37,7 +37,7 @@ module top #(parameter N = 64)(
     logic start_matmul;
     logic [31:0] input_addr;
     logic [31:0] weight_addr;
-    logic matmul_finished;
+    logic stall_mul;
     logic [31:0] output_addr;
 
     controller u_controller (
@@ -71,7 +71,7 @@ module top #(parameter N = 64)(
     .input_addr              (input_addr),
     .weight_addr        (weight_addr),
     .output_addr              (output_addr),
-    .matmul_finished    (matmul_finished)
+    .matmul_finished    (!stall_mul)
 );
 
 systolic_array_top #(
@@ -90,7 +90,7 @@ systolic_array_top #(
     .sc_x_data                 (sc_x_data),
     .sc_w_data                 (sc_w_data),
     .start_mul                 (start_matmul),
-    .stall_mul                 (!matmul_finished),
+    .stall_mul                 (stall_mul),
     .controller_sc_read_en     (controller_sc_read_en),
     .controller_sc_write_en    (controller_sc_write_en),
     .controller_sc_addr        (controller_sc_addr),
