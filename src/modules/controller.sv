@@ -21,8 +21,8 @@ module controller (
     // Scratchpad signals
     output logic sc_read_en,
     output logic sc_write_en,
-    input logic sc_data_in,
-    output logic sc_data_out,
+    output logic sc_data_in,
+    input logic sc_data_out,
     output logic sc_addr,
     input logic sc_ready,
     // sys array signals
