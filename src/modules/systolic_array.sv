@@ -18,7 +18,7 @@ module systolic_array #(parameter N=4) (
     word_t [N-1:0][N-1:0] count;
 
     genvar i, j;
-    generate;
+    generate
         for (i = 0; i < N; i = i + 1) begin : row
             for (j = 0; j < N; j = j + 1) begin : col
                 processing_element #(.N(N)) pe (

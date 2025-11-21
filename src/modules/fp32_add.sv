@@ -105,7 +105,7 @@ module fp32_add #(
   reg [31:0] y3;
 
   // leading-zero count for 29-bit value (simple loop; synthesizes as priority enc)
-function [4:0] lz29;
+function automatic [4:0] lz29;
   input [28:0] x;
   begin
     if (x[28]) begin
