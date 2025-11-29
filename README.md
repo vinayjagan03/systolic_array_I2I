@@ -99,7 +99,7 @@ Key files: - `controller.sv` - `fp32_add.sv` - `fp32_mul.sv` -
 
 ### 2. Pre-Synthesis Simulation
 
-**Location:** `src/testbench/`
+**Location:** `src/testbench/`\
 **Tool:** Cadence Xcelium
 Used for **functional verification of RTL before synthesis**.
 
@@ -107,7 +107,7 @@ Used for **functional verification of RTL before synthesis**.
 
 ### 3. Synthesis
 
-**Location:** `synthesis/`
+**Location:** `synthesis/`\
 **Tool:** Cadence Genus (45 nm Nangate Library)
 
 Outputs: - `top_netlist.sv` and Area, Power, Timing & QoR reports
@@ -116,7 +116,7 @@ Outputs: - `top_netlist.sv` and Area, Power, Timing & QoR reports
 
 ### 4. Logic Equivalence Checking (LEC)
 
-**Location:** `lec/`
+**Location:** `lec/`\
 **Tool:** Cadence Conformal
 
 Ensures **RTL and synthesized netlist are functionally identical**.
@@ -125,7 +125,7 @@ Ensures **RTL and synthesized netlist are functionally identical**.
 
 ### 5. Physical Design (PnR)
 
-**Location:** `layout/`
+**Location:** `layout/`\
 **Tool:** Cadence Innovus
 
 Includes: 
@@ -141,7 +141,7 @@ Includes:
 
 ### 6. Power Analysis
 
-**Location:** `power_analysis/`
+**Location:** `power_analysis/`\
 **Tool:** Cadence Joules
 
 Used for **Post-synthesis switching-activity-based power estimation**.
