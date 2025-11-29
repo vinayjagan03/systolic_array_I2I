@@ -1,0 +1,5 @@
+rm -rf noneq*
+rm -rf rtl_fv_map_db
+rm -rf LEC.*
+rm -rf hier_*
+rm -rf fv_*

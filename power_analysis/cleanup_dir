@@ -1,0 +1,5 @@
+rm -rf .cadence
+rm -rf joules_work
+rm -rf fv
+rm .rs*
+
