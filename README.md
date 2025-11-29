@@ -41,7 +41,7 @@ Processing Elements (PEs)** arranged in a regular 2D mesh. Each PE
 performs **multiply-accumulate (MAC)** operations and passes partial
 sums to its neighboring PEs in a rhythmic pipelined fashion.
 
-A centralized **controller module** manages: - Input data flow\
+A centralized **controller module** manages: - Input data flow
 - Weight loading
 - Computation sequencing
 - Output collection
@@ -99,15 +99,15 @@ Key files: - `controller.sv` - `fp32_add.sv` - `fp32_mul.sv` -
 
 ### 2. Pre-Synthesis Simulation
 
-**Location:** `src/testbench/`\
-**Tool:** Cadence Xcelium\
+**Location:** `src/testbench/`
+**Tool:** Cadence Xcelium
 Used for **functional verification of RTL before synthesis**.
 
 ------------------------------------------------------------------------
 
 ### 3. Synthesis
 
-**Location:** `synthesis/`\
+**Location:** `synthesis/`
 **Tool:** Cadence Genus (45 nm Nangate Library)
 
 Outputs: - `top_netlist.sv` - Area, Power, Timing & QoR
@@ -120,7 +120,7 @@ reports in:
 
 ### 4. Logic Equivalence Checking (LEC)
 
-**Location:** `lec/`\
+**Location:** `lec/`
 **Tool:** Cadence Conformal
 
 Ensures **RTL and synthesized netlist are functionally identical**.
@@ -129,16 +129,16 @@ Ensures **RTL and synthesized netlist are functionally identical**.
 
 ### 5. Physical Design (PnR)
 
-**Location:** `layout/`\
+**Location:** `layout/`
 **Tool:** Cadence Innovus
 
 Includes: 
-- Floorplanning\
-- Power Planning\
-- Placement\
-- Clock Tree Synthesis (CTS)\
-- Routing\
-- DRC\
+- Floorplanning
+- Power Planning
+- Placement
+- Clock Tree Synthesis (CTS)
+- Routing
+- DRC
 - GDSII Generation
 
 Final GDSII output:
@@ -149,7 +149,7 @@ Final GDSII output:
 
 ### 6. Power Analysis
 
-**Location:** `power_analysis/`\
+**Location:** `power_analysis/`
 **Tool:** Cadence Joules
 
 Used for **post-synthesis switching-activity-based power estimation**.
@@ -160,10 +160,10 @@ Used for **post-synthesis switching-activity-based power estimation**.
 
 ### Cadence EDA Tools
 
--   **Xcelium 23.x** -- RTL Simulation and Wave Dump\
--   **Genus 25.x** -- Logic Synthesis\
--   **Innovus 25.x** -- Physical Design & Routing\
--   **Conformal 24.x** -- Logic Equivalence Checking\
+-   **Xcelium 23.x** -- RTL Simulation and Wave Dump
+-   **Genus 25.x** -- Logic Synthesis
+-   **Innovus 25.x** -- Physical Design & Routing
+-   **Conformal 24.x** -- Logic Equivalence Checking
 -   **Joules 25.x** -- Power Analysis
 
 ### Technology
