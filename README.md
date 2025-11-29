@@ -142,7 +142,7 @@ Includes:
 ### 6. Power Analysis
 
 **Location:** `power_analysis/`\
-**Tool:** Cadence Joules
+**Tool:** Cadence Joules\
 
 Used for **Post-synthesis switching-activity-based power estimation**.
 
