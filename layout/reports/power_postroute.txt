@@ -1,0 +1,166 @@
+             0V	    VSS
+           1.1V	    VDD
+Using Power View: default_emulate_view.
+Load RC corner of view default_emulate_view
+
+Begin Power Analysis
+
+             0V	    VSS
+           1.1V	    VDD
+Begin Processing Timing Library for Power Calculation
+
+Ended Processing Timing Library for Power Calculation: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.34MB/7677.29MB/4610.57MB)
+
+
+
+Begin Processing Power Net/Grid for Power Calculation
+
+Ended Processing Power Net/Grid for Power Calculation: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.34MB/7677.29MB/4610.57MB)
+
+Begin Processing Timing Window Data for Power Calculation
+
+CK: assigning clock clk to net clk
+Ended Processing Timing Window Data for Power Calculation: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.34MB/7677.29MB/4610.57MB)
+
+Begin Processing User Attributes
+
+Ended Processing User Attributes: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.34MB/7677.29MB/4610.57MB)
+
+Begin Processing Signal Activity
+
+
+Starting Activity Propagation
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT)
+
+Finished Activity Propagation
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT)
+Ended Processing Signal Activity: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.36MB/7677.29MB/4610.57MB)
+
+Begin Power Computation
+
+      ----------------------------------------------------------
+      # of cell(s) missing both power/leakage table: 0
+      # of cell(s) missing power table: 0
+      # of cell(s) missing leakage table: 0
+      ----------------------------------------------------------
+
+
+
+Starting Calculating power
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT)
+ ... Calculating switching power
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT): 10%
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT): 20%
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT): 30%
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT): 40%
+ ... Calculating internal and leakage power
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT): 50%
+
+Finished Calculating power
+2025-Nov-29 17:06:15 (2025-Nov-29 22:06:15 GMT)
+      # of MSMV cell(s) missing power_level: 0
+Ended Power Computation: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.37MB/7677.29MB/4610.57MB)
+
+Begin Processing User Attributes
+
+Begin Processing set_power
+Ended Processing set_power: (cpu=0:00:00, real=0:00:00,
+mem(process/total/peak)=4288.37MB/7677.29MB/4610.57MB)
+Ended Processing User Attributes: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.37MB/7677.29MB/4610.57MB)
+
+Ended Power Analysis: (cpu=0:00:00, real=0:00:00, mem(process/total/peak)=4288.37MB/7677.29MB/4610.57MB)
+
+Begin Boundary Leakage Calculation
+Ended Boundary Leakage Calculation: (cpu=0:00:00, real=0:00:00,
+mem(process/total/peak)=4288.37MB/7677.29MB/4610.57MB)
+Begin Static Power Report Generation
+*----------------------------------------------------------------------------------------
+*	Innovus 25.11-s102_1 (64bit) 08/27/2025 13:03 (Linux 4.18.0-305.el8.x86_64)
+*	
+*
+* 	Date & Time:	2025-Nov-29 17:06:16 (2025-Nov-29 22:06:16 GMT)
+*
+*----------------------------------------------------------------------------------------
+*
+*	Design: top
+*
+*	Liberty Libraries used:
+*	        default_emulate_view: /package/eda/cells/NanGate_45nm_OCL_v2010_12/pdk_v1.3_v2010_12/NangateOpenCellLibrary_PDKv1_3_v2010_12/Front_End/Liberty/NLDM/NangateOpenCellLibrary_typical.lib
+*
+*	Parasitic Files used:
+*
+*       Power View : default_emulate_view
+*
+*       User-Defined Activity : N.A.
+*
+*       Activity File: N.A.
+*
+*       Hierarchical Global Activity: N.A.
+*
+*       Global Activity: N.A.
+*
+*       Sequential Element Activity: 0.200000
+*
+*       Primary Input Activity: 0.200000
+*
+*       Default icg ratio: N.A.
+*
+*       Global Comb ClockGate Ratio: N.A.
+*
+*	Power Units = 1mW
+*
+*	Time Units = 1e-09 secs
+*
+*       report_power
+*
+-----------------------------------------------------------------------------------------
+*
+
+
+
+Total Power
+-----------------------------------------------------------------------------------------
+Total Internal Power:        5.69670827 	   83.5212%
+Total Switching Power:       1.00599540 	   14.7492%
+Total Leakage Power:         0.11796864 	    1.7296%
+Total Power:                 6.82067230
+-----------------------------------------------------------------------------------------
+
+
+Group                           Internal   Switching     Leakage       Total  Percentage 
+                                Power      Power         Power         Power  (%)        
+-----------------------------------------------------------------------------------------
+Sequential                         5.127       0.596     0.07961       5.803       85.08
+Macro                                  0           0           0           0           0
+IO                                     0           0           0           0           0
+Combinational                     0.5695        0.41     0.03836       1.018       14.92
+Clock (Combinational)                  0           0           0           0           0
+Clock (Sequential)                     0           0           0           0           0
+-----------------------------------------------------------------------------------------
+Total                              5.697       1.006       0.118       6.821         100
+-----------------------------------------------------------------------------------------
+
+
+Rail                  Voltage   Internal   Switching     Leakage       Total  Percentage 
+                                Power      Power         Power         Power  (%)        
+-----------------------------------------------------------------------------------------
+VDD                       1.1      5.697       1.006       0.118       6.821         100
+ 
+ 
+-----------------------------------------------------------------------------------------
+*	Power Distribution Summary: 
+*              Highest Average Power:           FE_DBTC0_n_1238 (INV_X4):          0.02321
+*              Highest Leakage Power: u_systolic_array_top/buffer_counters_reg[63][1] (SDFFR_X1):         0.000106
+*                Total Cap:      9.65238e-12 F
+*                Total instances in design:  2221
+*                Total instances in design with no power:     0
+*                Total instances in design with no activty:     0
+
+*                Total Fillers and Decap:     0
+-----------------------------------------------------------------------------------------
+ 
+** INFO:  (VOLTUS_POWR-3465): There are 0 decaps and 0 fillers in the design
+
+Ended Static Power Report Generation: (cpu=0:00:00, real=0:00:00,
+mem(process/total/peak)=4288.47MB/7677.29MB/4610.57MB)
+
