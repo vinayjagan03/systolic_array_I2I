@@ -147,7 +147,7 @@ Final GDSII output:
 
 ------------------------------------------------------------------------
 
-### 6. joules Power Analysis
+### 6. Power Analysis
 
 **Location:** `power_analysis/`\
 **Tool:** Cadence Joules
