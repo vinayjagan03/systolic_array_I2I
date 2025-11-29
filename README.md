@@ -101,6 +101,7 @@ Key files: - `controller.sv` - `fp32_add.sv` - `fp32_mul.sv` -
 
 **Location:** `src/testbench/`\
 **Tool:** Cadence Xcelium
+
 Used for **functional verification of RTL before synthesis**.
 
 ------------------------------------------------------------------------
