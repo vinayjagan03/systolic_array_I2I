@@ -110,11 +110,7 @@ Used for **functional verification of RTL before synthesis**.
 **Location:** `synthesis/`
 **Tool:** Cadence Genus (45 nm Nangate Library)
 
-Outputs: - `top_netlist.sv` - Area, Power, Timing & QoR
-reports in:
-
-    synthesis/reports/
-    synthesis/outputs/
+Outputs: - `top_netlist.sv` and Area, Power, Timing & QoR reports
 
 ------------------------------------------------------------------------
 
@@ -141,10 +137,6 @@ Includes:
 - DRC
 - GDSII Generation
 
-Final GDSII output:
-
-    layout/outputs/top.gds
-
 ------------------------------------------------------------------------
 
 ### 6. Power Analysis
@@ -152,7 +144,7 @@ Final GDSII output:
 **Location:** `power_analysis/`
 **Tool:** Cadence Joules
 
-Used for **post-synthesis switching-activity-based power estimation**.
+Used for **Post-synthesis switching-activity-based power estimation**.
 
 ------------------------------------------------------------------------
 
