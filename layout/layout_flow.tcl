@@ -31,7 +31,7 @@ set_db init_ground_nets VSS
 
 init_design
 
-create_floorplan -core_margins_by die -core_density_size 2.0 0.7 8 12 8 12
+create_floorplan -core_margins_by die -core_density_size 2.0 0.7 3 3 3 3 
 
 # Create PDN
 source [ file join $LAYOUT_SCRIPTS create_pdn.tcl ]
@@ -125,8 +125,11 @@ set_db check_drc_limit 1000
 check_drc
 check_connectivity -type all
 
+source [ file join $LAYOUT_SCRIPTS edit_trim.tcl]
+
 # Save the final db
 write_db savedDesign
 
-
+#generate GDS file
+write_stream $LAYOUT_OUTPUTS/${TOP}.gds -mode ALL
 

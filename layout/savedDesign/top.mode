@@ -54,7 +54,7 @@ catch { set_verify_drc_mode -disable_rules "" }
 catch { set_verify_drc_mode -exclude_pg_net false }
 catch { set_verify_drc_mode -ignore_trial_route false }
 catch { set_verify_drc_mode -limit 1000 }
-catch { set_verify_drc_mode -report /scratch/asicfab/a/vkevat/systolic_array_I2I/layout/reports/top.drc.rpt }
+catch { set_verify_drc_mode -report /home/min/a/hjaigane/systolic_final/systolic_array_I2I/layout/reports/top.drc.rpt }
 catch { set_verify_drc_mode -use_min_spacing_on_block_obs auto }
 catch { setDelayCalMode -enable_hier_save_restore_flow false }
 catch { setDelayCalMode -enable_high_fanout true }
