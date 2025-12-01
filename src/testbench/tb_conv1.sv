@@ -8,31 +8,31 @@ import alexnet_conv1_meta::*;
 module tb_conv1;
 
     // ========================================================================
-    // 1. DEBUG CONFIGURATION
+    // 1. GLOBAL CONFIGURATION & BUFFER
     // ========================================================================
-    // M/COUT subset for speed, but FULL K for correctness.
-    localparam int M_DBG    = 128;               
-    localparam int K_DBG    = CONV1_IM2COL_K;    // 363 (FULL DEPTH)
-    localparam int COUT_DBG = 32;                
+    // Active subset: we are only checking first 128 rows, 32 channels
+    localparam int M_ACTIVE    = 128;               // Rows (M)
+    localparam int COUT_ACTIVE = 32;                // Output channels (C)
+    // Full depth K is required for the math to match golden scalar values
+    localparam int K_ACTIVE    = CONV1_IM2COL_K;    // 363
 
-    localparam int M    = (M_DBG    < CONV1_IM2COL_M)     ? M_DBG    : CONV1_IM2COL_M;
-    localparam int K    = (K_DBG    < CONV1_IM2COL_K)     ? K_DBG    : CONV1_IM2COL_K;
-    localparam int COUT = (COUT_DBG < CONV1_WEIGHTS_COUT) ? COUT_DBG : CONV1_WEIGHTS_COUT;
-    
-    localparam int N    = SA_N; // 64
+    localparam int N = SA_N; // Systolic Array Dimension (64)
+
+    // Global accumulation buffer for RTL outputs (M x COUT subset)
+    // We strictly use this for output collection and CSV dumping.
+    shortreal Y_accum [0:M_ACTIVE-1][0:COUT_ACTIVE-1];
 
     // ========================================================================
-    // 2. Global Buffers
+    // 2. INPUT DATA BUFFERS
     // ========================================================================
-    word_t T [M][K];          // im2col input
-    word_t W [K][COUT];       // weights
-    shortreal Y [M][COUT];    // output
+    word_t T [M_ACTIVE][K_ACTIVE];      // im2col input
+    word_t W [K_ACTIVE][COUT_ACTIVE];   // weights
 
-    // Scratchpad not used for streaming, but kept for compatibility
+    // Scratchpad (legacy compatibility)
     word_t sc [logic[31:0]];
 
     // ========================================================================
-    // 3. DUT Signals
+    // 3. DUT SIGNALS
     // ========================================================================
     logic clk, n_rst;
     
@@ -48,7 +48,7 @@ module tb_conv1;
     logic               stall_mul;
 
     // ========================================================================
-    // 4. Clock Generation
+    // 4. CLOCK GENERATION
     // ========================================================================
     initial begin
         clk = 1'b0;
@@ -56,7 +56,7 @@ module tb_conv1;
     end
 
     // ========================================================================
-    // 5. DUT Instantiation
+    // 5. DUT INSTANTIATION
     // ========================================================================
     systolic_array_top #(
         .N (N)
@@ -75,7 +75,7 @@ module tb_conv1;
     );
 
     // ========================================================================
-    // 6. Helper: Parse Hex CSV Row
+    // 6. HELPER: PARSE HEX CSV ROW
     // ========================================================================
     function void parse_hex_row(
         input  string line,
@@ -126,7 +126,7 @@ module tb_conv1;
     endfunction
 
     // ========================================================================
-    // 7. Task: Load Matrices
+    // 7. TASK: LOAD MATRICES
     // ========================================================================
     task automatic load_conv1_matrices();
         int fd_top, fd_w;
@@ -138,12 +138,12 @@ module tb_conv1;
         fd_top = $fopen(CONV1_TOPLITZ_CSV, "r");
         if (fd_top == 0) $fatal(1, "[TB] ERROR: could not open %s", CONV1_TOPLITZ_CSV);
 
-        for (int m_idx = 0; m_idx < M; m_idx++) begin
+        for (int m_idx = 0; m_idx < M_ACTIVE; m_idx++) begin
             if ($feof(fd_top)) $fatal(1, "[TB] ERROR: toplitz.csv ended early at row %0d", m_idx);
             line = "";
             void'($fgets(line, fd_top));
-            parse_hex_row(line, row_vals, K);
-            for (int k_idx = 0; k_idx < K; k_idx++) begin
+            parse_hex_row(line, row_vals, K_ACTIVE);
+            for (int k_idx = 0; k_idx < K_ACTIVE; k_idx++) begin
                 T[m_idx][k_idx] = row_vals[k_idx];
             end
         end
@@ -154,39 +154,37 @@ module tb_conv1;
         fd_w = $fopen(CONV1_WEIGHTS_CSV, "r");
         if (fd_w == 0) $fatal(1, "[TB] ERROR: could not open %s", CONV1_WEIGHTS_CSV);
 
-        for (int k_idx = 0; k_idx < K; k_idx++) begin
+        for (int k_idx = 0; k_idx < K_ACTIVE; k_idx++) begin
             if ($feof(fd_w)) $fatal(1, "[TB] ERROR: weights.csv ended early at row %0d", k_idx);
             line = "";
             void'($fgets(line, fd_w));
-            parse_hex_row(line, row_vals, COUT);
-            for (int c_idx = 0; c_idx < COUT; c_idx++) begin
+            parse_hex_row(line, row_vals, COUT_ACTIVE);
+            for (int c_idx = 0; c_idx < COUT_ACTIVE; c_idx++) begin
                 W[k_idx][c_idx] = row_vals[c_idx];
             end
         end
         $fclose(fd_w);
-        $display("[TB] Finished loading. Active: M=%0d, K=%0d, COUT=%0d", M, K, COUT);
+        $display("[TB] Finished loading. Active: M=%0d, K=%0d, COUT=%0d", M_ACTIVE, K_ACTIVE, COUT_ACTIVE);
     endtask
 
     // ========================================================================
-    // 8. Task: Run Single Tile
+    // 8. TASK: RUN SINGLE TILE
     // ========================================================================
     task automatic run_tile(
         input  int m0,   
         input  int c0
     );
         int cyc;
-        
-        // Local counters for this automatic task
         int k_ptr_x [N]; 
         int k_ptr_w [N];
         
-        // Initialize pointers using Blocking Assignment
+        // Initialize pointers (Blocking assignment for automatic vars)
         for(int i=0; i<N; i++) begin
             k_ptr_x[i] = 0;
             k_ptr_w[i] = 0;
         end
 
-        // 1. Setup Addresses (Dummy)
+        // 1. Setup Addresses
         x_addr <= 32'h0;
         w_addr <= 32'h0;
 
@@ -210,7 +208,7 @@ module tb_conv1;
                     int cur_k = k_ptr_x[i];
 
                     // T is [M][K] => T[row][col]
-                    if (cur_m < M && cur_k < K) begin
+                    if (cur_m < M_ACTIVE && cur_k < K_ACTIVE) begin
                         sc_x_data[i] <= T[cur_m][cur_k];
                         k_ptr_x[i]    = cur_k + 1; // Blocking
                     end else begin
@@ -226,7 +224,7 @@ module tb_conv1;
                     int cur_k = k_ptr_w[i];
 
                     // W is [K][COUT] => W[row][col]
-                    if (cur_c < COUT && cur_k < K) begin
+                    if (cur_c < COUT_ACTIVE && cur_k < K_ACTIVE) begin
                         sc_w_data[i] <= W[cur_k][cur_c];
                         k_ptr_w[i]    = cur_k + 1; // Blocking
                     end else begin
@@ -249,28 +247,41 @@ module tb_conv1;
             @(negedge clk);
         end
 
-        // 4. Drain Cycles
+        // 4. DRAIN CYCLES
         repeat (2 * N) @(posedge clk);
 
-        // 5. Read Output & Accumulate
+        // 5. READ OUTPUT & WRITE TO Y_accum (Canonical Writeback)
         for (int r = 0; r < N; r++) begin
-            int m_idx = m0 + r;
-            if (m_idx >= M) continue;
-
             for (int c = 0; c < N; c++) begin
-                int c_idx = c0 + c;
-                if (c_idx >= COUT) continue;
                 
-                Y[m_idx][c_idx] += $bitstoshortreal(DUT.sys_array.psum[r][c]);
+                // Calculate GLOBAL indices using Tile Offsets
+                int m_idx = m0 + r;
+                int c_idx = c0 + c;
+
+                // Bounds check
+                if (m_idx < M_ACTIVE && c_idx < COUT_ACTIVE) begin
+                    // Read psum from systolic array for this PE (r,c)
+                    shortreal y_val;
+                    y_val = $bitstoshortreal(DUT.sys_array.psum[r][c]);
+                    
+                    // Store to Global Buffer
+                    Y_accum[m_idx][c_idx] = y_val;
+
+                    // TEMP DEBUG: Catch specific indices
+                    if ((m_idx == 0 && c_idx == 0) || (m_idx == 112 && c_idx == 5)) begin
+                         real y_val_r = y_val;
+                         $display("[TB DEBUG] writeback Y_accum[%0d][%0d] = %f", m_idx, c_idx, y_val_r);
+                    end
+                end
             end
         end
     endtask
 
     // ========================================================================
-    // 9. Main Test Process
+    // 9. MAIN TEST PROCESS
     // ========================================================================
     initial begin : tb_main
-        int fd_out;
+        integer fd_out;
         int tile_id; 
         
         // Variables for checks
@@ -287,10 +298,10 @@ module tb_conv1;
         sc_w_data  = '{default:'0};
         tile_id    = 0;
 
-        // Clear Y buffer
-        for (int m = 0; m < M; m++) begin
-            for (int c = 0; c < COUT; c++) begin
-                Y[m][c] = 0.0;
+        // Clear accumulation buffer
+        for (int m = 0; m < M_ACTIVE; m++) begin
+            for (int c = 0; c < COUT_ACTIVE; c++) begin
+                Y_accum[m][c] = 0.0;
             end
         end
 
@@ -300,8 +311,8 @@ module tb_conv1;
         repeat(10) @(posedge clk);
 
         $display("----------------------------------------------------------");
-        $display("[TB] AlexNet Conv1 Systolic Array Test");
-        $display("[TB] Mode: M=%0d, K=%0d (Full), COUT=%0d", M, K, COUT);
+        $display("[TB] AlexNet Conv1 Systolic Array Test (Active Subset)");
+        $display("[TB] Mode: M=%0d, K=%0d (Full), COUT=%0d", M_ACTIVE, K_ACTIVE, COUT_ACTIVE);
         $display("----------------------------------------------------------");
 
         // 1. Load Data
@@ -309,48 +320,56 @@ module tb_conv1;
 
         // ----------------------------------------------------------
         // [CHECK 1] SV-side software check: Y[0][0] = sum_k T[0,k] * W[k,0]
-        // (operating on FP32 bit patterns using $bitstoshortreal)
         // ----------------------------------------------------------
         sv_sw_y00 = 0.0;
-
-        for (int k = 0; k < K; k++) begin
-            t_sr = $bitstoshortreal(T[0][k]);   // T bits -> float
-            w_sr = $bitstoshortreal(W[k][0]);   // W bits -> float
+        for (int k = 0; k < K_ACTIVE; k++) begin
+            t_sr = $bitstoshortreal(T[0][k]);
+            w_sr = $bitstoshortreal(W[k][0]);
             sv_sw_y00 += t_sr * w_sr;
         end
-
-        $display("[TB] SV-SW Y[0][0] = %f", sv_sw_y00);
+        // Use real temp for display
+        begin
+            real sv_sw_y00_r;
+            sv_sw_y00_r = sv_sw_y00;
+            $display("[TB] SV-SW Y[0][0] = %f", sv_sw_y00_r);
+        end
 
         // ----------------------------------------------------------
         // [CHECK 2] Debug first few entries of T[0,:] and W[:,0]
         // ----------------------------------------------------------
         $display("[TB] DEBUG T[0][0..7]:");
         for (int k = 0; k < 8; k++) begin
-            if (k < K) begin
+            if (k < K_ACTIVE) begin
                 dbg_t = $bitstoshortreal(T[0][k]);
-                $display("  T[0][%0d] = %f (0x%08h)",
-                         k, dbg_t, T[0][k]);  // hex = raw FP32 bits
+                // Use real temp for display
+                begin
+                    real dbg_t_r;
+                    dbg_t_r = dbg_t;
+                    $display("  T[0][%0d] = %f (0x%08h)", k, dbg_t_r, T[0][k]);
+                end
             end
         end
-
         $display("[TB] DEBUG W[0..7][0]:");
         for (int k = 0; k < 8; k++) begin
-            if (k < K) begin
+            if (k < K_ACTIVE) begin
                 dbg_w = $bitstoshortreal(W[k][0]);
-                $display("  W[%0d][0] = %f (0x%08h)",
-                         k, dbg_w, W[k][0]);  // hex = raw FP32 bits
+                // Use real temp for display
+                begin
+                    real dbg_w_r;
+                    dbg_w_r = dbg_w;
+                    $display("  W[%0d][0] = %f (0x%08h)", k, dbg_w_r, W[k][0]);
+                end
             end
         end
 
         // 2. Perform Tiled Multiplication
         $display("[TB] Starting tiled multiplication...");
         
-        for (int m0 = 0; m0 < M; m0 += N) begin
-            for (int c0 = 0; c0 < COUT; c0 += N) begin
+        for (int m0 = 0; m0 < M_ACTIVE; m0 += N) begin
+            for (int c0 = 0; c0 < COUT_ACTIVE; c0 += N) begin
                 tile_id++;
                 $display("[TB] [Tile %0d] Processing Block: m0=%0d..%0d, c0=%0d..%0d", 
                          tile_id, m0, m0+N-1, c0, c0+N-1);
-
                 run_tile(m0, c0);
             end
             $display("[TB] Row-Block Complete: m=%0d", m0);
@@ -359,12 +378,7 @@ module tb_conv1;
         // ----------------------------------------------------------
         // [CHECK 3] Check RTL output for Y[0][0]
         // ----------------------------------------------------------
-        rtl_y00 = Y[0][0];
-        // Note: rtl_y00 is already a shortreal/float, so we can just print it.
-        // We use $shortrealtobits here to see the hex representation of the result.
-        // If your simulator complains about shortrealtobits on a shortreal variable,
-        // you can cast or use the temp variable trick again.
-        // But usually $shortrealtobits(shortreal_var) is valid.
+        rtl_y00 = Y_accum[0][0];
         begin
              real rtl_y00_r;
              rtl_y00_r = rtl_y00;
@@ -372,37 +386,18 @@ module tb_conv1;
                       rtl_y00_r, $realtobits(rtl_y00_r));
         end
 
-        // 3. Dump Output to CSV
-        $display("[TB] Computation finished. Writing output to %s...", CONV1_RTL_OUT_CSV);
-        
+        // 3. Dump Y_accum to CSV (Linear M x COUT)
         fd_out = $fopen(CONV1_RTL_OUT_CSV, "w");
         if (fd_out == 0) $fatal(1, "[TB] ERROR: could not open %s", CONV1_RTL_OUT_CSV);
 
-        if (M < CONV1_IM2COL_M || COUT < CONV1_WEIGHTS_COUT) begin
-            // Debug linear dump
-            for (int m_idx = 0; m_idx < M; m_idx++) begin
-                for (int c = 0; c < COUT; c++) begin
-                    word_t bits;
-                    bits = $shortrealtobits(Y[m_idx][c]);
-                    $fwrite(fd_out, "%08h", bits);
-                    if (c != COUT - 1) $fwrite(fd_out, ",");
-                end
-                $fwrite(fd_out, "\n");
-            end
-        end else begin
-            // Full structured dump
-            for (int h = 0; h < CONV1_OUT_H; h++) begin
-                for (int w = 0; w < CONV1_OUT_W; w++) begin
-                    int m_idx;
-                    m_idx = h * CONV1_OUT_W + w; 
-                    for (int c = 0; c < CONV1_OUT_C; c++) begin
-                        word_t bits;
-                        bits = $shortrealtobits(Y[m_idx][c]);
-                        $fwrite(fd_out, "%08h", bits);
-                        if (c != CONV1_OUT_C - 1) $fwrite(fd_out, ",");
-                    end
-                    $fwrite(fd_out, "\n");
-                end
+        $display("[TB] Computation finished. Writing output to %s...", CONV1_RTL_OUT_CSV);
+
+        // Linear dump: One value per line, fp32 hex
+        for (int m = 0; m < M_ACTIVE; m++) begin
+            for (int c = 0; c < COUT_ACTIVE; c++) begin
+                word_t bits;
+                bits = $shortrealtobits(Y_accum[m][c]);
+                $fdisplay(fd_out, "%08h", bits);
             end
         end
 
