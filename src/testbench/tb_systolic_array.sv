@@ -35,7 +35,7 @@ module tb_systolic_array;
 
     // Test sequence
     initial begin
-        fd = $fopen("input.bin", "rb");
+        fd = $fopen("../systolic_array_I2I/input.bin", "rb"); //$fopen("input.bin", "rb");
         if (fd == 0) begin
             $display("Error: Could not open input.bin");
             $finish;
