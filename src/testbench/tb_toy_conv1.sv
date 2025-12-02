@@ -25,14 +25,19 @@ module tb_toy_conv1;
   localparam int NUM_K_TILES = (K + N - 1) / N; // ceil(K / N)
 
   // ------------------------------------------------------------------
+  // Debug controls
+  // ------------------------------------------------------------------
+  localparam bit DEBUG_SINGLE_TILE = 1'b0;  // 0 = full layer, 1 = single tile only
+  localparam int DBG_M_TILE        = 0;
+  localparam int DBG_K_TILE        = 1;
+
+  // ------------------------------------------------------------------
   // Clock / reset
   // ------------------------------------------------------------------
   logic clk;
   logic n_rst;
 
-  // ------------------------------------------------------------------
-  // DEBUG MONITOR VARIABLE
-  // ------------------------------------------------------------------
+  // DEBUG monitor variable
   int dbg_cycle;
 
   initial begin
@@ -123,7 +128,7 @@ module tb_toy_conv1;
   end
 
   // ------------------------------------------------------------------
-  // DEBUG: print internal behavior for tile (0,1)
+  // DEBUG: print internal behavior for early cycles
   // ------------------------------------------------------------------
   always_ff @(posedge clk or negedge n_rst) begin
     if (!n_rst) begin
@@ -131,7 +136,6 @@ module tb_toy_conv1;
     end else begin
       dbg_cycle <= dbg_cycle + 1;
 
-      // Limit printout so log doesn't explode
       if (dbg_cycle < 60) begin
         $display(
           "DBG cyc=%0d | st=%0d ctr=%0d buf_ctr0=%0d start=%b | v_q0=%b xq0=%h wq0=%h | xd0=%h wd0=%h | psum00=%h",
@@ -233,7 +237,9 @@ module tb_toy_conv1;
   // Main test sequence: full tiling over M and K, accumulate into G_hw
   // ------------------------------------------------------------------
   initial begin : full_toy_layer_test
-    // Declarations MUST come before any statements in this block
+    // --------------------------------------------------------------
+    // Declarations (must precede statements)
+    // --------------------------------------------------------------
     int        errors;
     shortreal  tol;
 
@@ -244,6 +250,8 @@ module tb_toy_conv1;
     int        r, cc, kk;
     int        global_row;
     int        fd_out;
+
+    bit        tile_active;
 
     // Tile and bit-level vars
     word_t     T_tile [0:N-1][0:N-1];
@@ -296,22 +304,28 @@ module tb_toy_conv1;
     end
 
     // --------------------------------------------------------------
-    // Tiling loops over M and K (DEBUG: single tile)
+    // Tiling loops over M and K
     // --------------------------------------------------------------
-    // DEBUG: run only m_tile=0, k_tile=1
-    for (m_tile = 0; m_tile <= 0; m_tile++) begin
+    for (m_tile = 0; m_tile < NUM_M_TILES; m_tile++) begin
       row_start = m_tile * N;
       if (row_start + N <= M)
         row_count = N;
       else
         row_count = M - row_start;
 
-      for (k_tile = 1; k_tile <= 1; k_tile++) begin
+      for (k_tile = 0; k_tile < NUM_K_TILES; k_tile++) begin
         k_start = k_tile * N;
         if (k_start + N <= K)
           k_count = N;
         else
           k_count = K - k_start;
+
+        // Tile selection in debug mode
+        tile_active = (!DEBUG_SINGLE_TILE) ||
+                      ((m_tile == DBG_M_TILE) && (k_tile == DBG_K_TILE));
+
+        if (!tile_active)
+          continue;
 
         // ----------------------------------------------------------
         // Build 4x4 tiles for this (m_tile, k_tile) with padding
@@ -334,6 +348,7 @@ module tb_toy_conv1;
 
         // ----------------------------------------------------------
         // Program scratchpad for this tile
+        // (layout matches systolic_array_top addressing)
         // ----------------------------------------------------------
         for (r = 0; r < N; r++) begin
           for (cc = 0; cc < N; cc++) begin
@@ -420,40 +435,39 @@ module tb_toy_conv1;
     // --------------------------------------------------------------
     // Compare G_hw vs G_gold with tolerance
     // --------------------------------------------------------------
-    // DEBUG: Disabled global check because we are only running a partial calculation
-    if (0) begin
-        errors = 0;
-        $display("==================================================");
-        $display(" FULL TOY LAYER CHECK vs golden_output.csv ");
-        $display("==================================================");
+    if (!DEBUG_SINGLE_TILE) begin
+      errors = 0;
+      $display("==================================================");
+      $display(" FULL TOY LAYER CHECK vs golden_output.csv ");
+      $display("==================================================");
 
-        for (m = 0; m < M; m++) begin
-          for (c = 0; c < C_OUT; c++) begin
-            hw_bits   = G_hw[m][c];
-            gold_bits = G_gold[m][c];
+      for (m = 0; m < M; m++) begin
+        for (c = 0; c < C_OUT; c++) begin
+          hw_bits   = G_hw[m][c];
+          gold_bits = G_gold[m][c];
 
-            hw_sr   = $bitstoshortreal(hw_bits);
-            gold_sr = $bitstoshortreal(gold_bits);
-            diff    = (hw_sr > gold_sr) ? (hw_sr - gold_sr) : (gold_sr - hw_sr);
+          hw_sr   = $bitstoshortreal(hw_bits);
+          gold_sr = $bitstoshortreal(gold_bits);
+          diff    = (hw_sr > gold_sr) ? (hw_sr - gold_sr) : (gold_sr - hw_sr);
 
-            if (diff > tol) begin
-              $display("MISMATCH (row=%0d, ch=%0d): HW=%08h (%.8f) GOLD=%08h (%.8f) |diff|=%.3e",
-                       m, c,
-                       hw_bits,  hw_sr,
-                       gold_bits, gold_sr,
-                       diff);
-              errors++;
-            end
+          if (diff > tol) begin
+            $display("MISMATCH (row=%0d, ch=%0d): HW=%08h (%.8f) GOLD=%08h (%.8f) |diff|=%.3e",
+                     m, c,
+                     hw_bits,  hw_sr,
+                     gold_bits, gold_sr,
+                     diff);
+            errors++;
           end
         end
+      end
 
-        if (errors == 0)
-          $display("[TB] FULL TOY LAYER MATCHES golden_output.csv ✅");
-        else
-          $display("[TB] FULL TOY LAYER FAILED: %0d mismatches ❌", errors);
+      if (errors == 0)
+        $display("[TB] FULL TOY LAYER MATCHES golden_output.csv ✅");
+      else
+        $display("[TB] FULL TOY LAYER FAILED: %0d mismatches ❌", errors);
     end
     else begin
-        $display("[TB] Global check disabled for single-tile debug run.");
+      $display("[TB] Global full-layer check skipped (DEBUG_SINGLE_TILE=1).");
     end
 
     // --------------------------------------------------------------
