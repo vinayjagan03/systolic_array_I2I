@@ -10,7 +10,11 @@ module tb_conv1;
     // ========================================================================
     // 1. GLOBAL CONFIGURATION & BUFFER
     // ========================================================================
-    // Active subset: we are only checking first 128 rows, 32 channels
+    
+    // <<< DEBUG FLAG: Set to 1 to zero out everything except T[0,:] and W[:,0]
+    localparam bit SINGLE_OUTPUT_MODE = 1; 
+
+    // Active subset sizes for this test run
     localparam int M_ACTIVE    = 128;               // Rows (M)
     localparam int COUT_ACTIVE = 32;                // Output channels (C)
     // Full depth K is required for the math to match golden scalar values
@@ -19,7 +23,6 @@ module tb_conv1;
     localparam int N = SA_N; // Systolic Array Dimension (64)
 
     // Global accumulation buffer for RTL outputs (M x COUT subset)
-    // We strictly use this for output collection and CSV dumping.
     shortreal Y_accum [0:M_ACTIVE-1][0:COUT_ACTIVE-1];
 
     // ========================================================================
@@ -165,6 +168,32 @@ module tb_conv1;
         end
         $fclose(fd_w);
         $display("[TB] Finished loading. Active: M=%0d, K=%0d, COUT=%0d", M_ACTIVE, K_ACTIVE, COUT_ACTIVE);
+
+        // --------------------------------------------------------------------
+        // DEBUG: SINGLE OUTPUT MODE LOGIC
+        // --------------------------------------------------------------------
+        if (SINGLE_OUTPUT_MODE) begin
+            $display("============================================================");
+            $display("[TB] SINGLE_OUTPUT_MODE is ON");
+            $display("[TB] Zeroing all T rows except m=0 and all W columns except c=0");
+            $display("============================================================");
+
+            // Zero T rows m = 1 .. M_ACTIVE-1 (Keep T[0][:])
+            for (int mi = 1; mi < M_ACTIVE; mi++) begin
+                for (int ki = 0; ki < K_ACTIVE; ki++) begin
+                    T[mi][ki] = '0;
+                end
+            end
+
+            // Zero W columns c = 1 .. COUT_ACTIVE-1 (Keep W[:][0])
+            for (int ki = 0; ki < K_ACTIVE; ki++) begin
+                for (int co = 1; co < COUT_ACTIVE; co++) begin
+                    W[ki][co] = '0;
+                end
+            end
+            
+            $display("[TB] Zeroing complete. Expecting non-zero result ONLY at Y[0][0].");
+        end
     endtask
 
     // ========================================================================
@@ -207,7 +236,6 @@ module tb_conv1;
                     int cur_m = m0 + i;
                     int cur_k = k_ptr_x[i];
 
-                    // T is [M][K] => T[row][col]
                     if (cur_m < M_ACTIVE && cur_k < K_ACTIVE) begin
                         sc_x_data[i] <= T[cur_m][cur_k];
                         k_ptr_x[i]    = cur_k + 1; // Blocking
@@ -223,7 +251,6 @@ module tb_conv1;
                     int cur_c = c0 + i;
                     int cur_k = k_ptr_w[i];
 
-                    // W is [K][COUT] => W[row][col]
                     if (cur_c < COUT_ACTIVE && cur_k < K_ACTIVE) begin
                         sc_w_data[i] <= W[cur_k][cur_c];
                         k_ptr_w[i]    = cur_k + 1; // Blocking
@@ -250,27 +277,27 @@ module tb_conv1;
         // 4. DRAIN CYCLES
         repeat (2 * N) @(posedge clk);
 
-        // 5. READ OUTPUT & WRITE TO Y_accum (Canonical Writeback)
+        // 5. READ OUTPUT & WRITE TO Y_accum
         for (int r = 0; r < N; r++) begin
             for (int c = 0; c < N; c++) begin
                 
-                // Calculate GLOBAL indices using Tile Offsets
+                // Calculate GLOBAL indices
                 int m_idx = m0 + r;
                 int c_idx = c0 + c;
 
                 // Bounds check
                 if (m_idx < M_ACTIVE && c_idx < COUT_ACTIVE) begin
-                    // Read psum from systolic array for this PE (r,c)
                     shortreal y_val;
                     y_val = $bitstoshortreal(DUT.sys_array.psum[r][c]);
                     
                     // Store to Global Buffer
                     Y_accum[m_idx][c_idx] = y_val;
 
-                    // TEMP DEBUG: Catch specific indices
-                    if ((m_idx == 0 && c_idx == 0) || (m_idx == 112 && c_idx == 5)) begin
-                         real y_val_r = y_val;
-                         $display("[TB DEBUG] writeback Y_accum[%0d][%0d] = %f", m_idx, c_idx, y_val_r);
+                    // DEBUG: Print non-zero writes in Single Output Mode
+                    if (SINGLE_OUTPUT_MODE && (y_val > 0.000001 || y_val < -0.000001)) begin
+                        real y_val_r = y_val;
+                        $display("[TB DEBUG] Non-zero write detected! Y_accum[%0d][%0d] = %f", 
+                                 m_idx, c_idx, y_val_r);
                     end
                 end
             end
@@ -327,39 +354,10 @@ module tb_conv1;
             w_sr = $bitstoshortreal(W[k][0]);
             sv_sw_y00 += t_sr * w_sr;
         end
-        // Use real temp for display
         begin
             real sv_sw_y00_r;
             sv_sw_y00_r = sv_sw_y00;
             $display("[TB] SV-SW Y[0][0] = %f", sv_sw_y00_r);
-        end
-
-        // ----------------------------------------------------------
-        // [CHECK 2] Debug first few entries of T[0,:] and W[:,0]
-        // ----------------------------------------------------------
-        $display("[TB] DEBUG T[0][0..7]:");
-        for (int k = 0; k < 8; k++) begin
-            if (k < K_ACTIVE) begin
-                dbg_t = $bitstoshortreal(T[0][k]);
-                // Use real temp for display
-                begin
-                    real dbg_t_r;
-                    dbg_t_r = dbg_t;
-                    $display("  T[0][%0d] = %f (0x%08h)", k, dbg_t_r, T[0][k]);
-                end
-            end
-        end
-        $display("[TB] DEBUG W[0..7][0]:");
-        for (int k = 0; k < 8; k++) begin
-            if (k < K_ACTIVE) begin
-                dbg_w = $bitstoshortreal(W[k][0]);
-                // Use real temp for display
-                begin
-                    real dbg_w_r;
-                    dbg_w_r = dbg_w;
-                    $display("  W[%0d][0] = %f (0x%08h)", k, dbg_w_r, W[k][0]);
-                end
-            end
         end
 
         // 2. Perform Tiled Multiplication
@@ -392,7 +390,6 @@ module tb_conv1;
 
         $display("[TB] Computation finished. Writing output to %s...", CONV1_RTL_OUT_CSV);
 
-        // Linear dump: One value per line, fp32 hex
         for (int m = 0; m < M_ACTIVE; m++) begin
             for (int c = 0; c < COUT_ACTIVE; c++) begin
                 word_t bits;
