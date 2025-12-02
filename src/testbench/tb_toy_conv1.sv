@@ -9,10 +9,10 @@ module tb_toy_conv1;
   // ------------------------------------------------------------------
   // Basic configuration for toy_conv1
   // ------------------------------------------------------------------
-  localparam int N       = 4;   // systolic array dimension
-  localparam int M       = 25;  // rows of T and G (flattened 5x5)
-  localparam int K       = 9;   // inner dimension
-  localparam int C_OUT   = 4;   // output channels
+  localparam int N       = 4;    // systolic array dimension
+  localparam int M       = 25;   // rows of T and G (flattened 5x5)
+  localparam int K       = 9;    // inner dimension
+  localparam int C_OUT   = 4;    // output channels
 
   // CSV paths (relative to BG_PROJECT where you run vsim)
   localparam string TOPLITZ_CSV    = "toy_toplitz/layers/001_conv1/toplitz.csv";
@@ -25,7 +25,7 @@ module tb_toy_conv1;
   localparam int NUM_K_TILES = (K + N - 1) / N; // ceil(K / N)
 
   // ------------------------------------------------------------------
-  // Debug controls
+  // Debug controls [PRODUCTION SETTINGS]
   // ------------------------------------------------------------------
   localparam bit DEBUG_SINGLE_TILE = 1'b0;  // 0 = full layer, 1 = single tile only
   localparam int DBG_M_TILE        = 0;
@@ -36,7 +36,6 @@ module tb_toy_conv1;
   // ------------------------------------------------------------------
   logic clk;
   logic n_rst;
-
   // DEBUG monitor variable
   int dbg_cycle;
 
@@ -55,10 +54,8 @@ module tb_toy_conv1;
   logic [N-1:0]       sc_valid_write;
   logic [N-1:0][31:0] sc_write_queue;
   logic [N-1:0][31:0] sc_write_data;
-
   word_t [N-1:0]      sc_x_data;
   word_t [N-1:0]      sc_w_data;
-
   logic               start_mul;
   logic               stall_mul;
 
@@ -135,7 +132,6 @@ module tb_toy_conv1;
       dbg_cycle <= 0;
     end else begin
       dbg_cycle <= dbg_cycle + 1;
-
       if (dbg_cycle < 60) begin
         $display(
           "DBG cyc=%0d | st=%0d ctr=%0d buf_ctr0=%0d start=%b | v_q0=%b xq0=%h wq0=%h | xd0=%h wd0=%h | psum00=%h",
@@ -238,7 +234,7 @@ module tb_toy_conv1;
   // ------------------------------------------------------------------
   initial begin : full_toy_layer_test
     // --------------------------------------------------------------
-    // Declarations (must precede statements)
+    // Declarations
     // --------------------------------------------------------------
     int        errors;
     shortreal  tol;
@@ -252,7 +248,7 @@ module tb_toy_conv1;
     int        fd_out;
 
     bit        tile_active;
-
+    
     // Tile and bit-level vars
     word_t     T_tile [0:N-1][0:N-1];
     word_t     W_tile [0:N-1][0:N-1];
@@ -320,8 +316,8 @@ module tb_toy_conv1;
         else
           k_count = K - k_start;
 
-        // Tile selection in debug mode
-        tile_active = (!DEBUG_SINGLE_TILE) ||
+        // Tile selection check
+        tile_active = (!DEBUG_SINGLE_TILE) || 
                       ((m_tile == DBG_M_TILE) && (k_tile == DBG_K_TILE));
 
         if (!tile_active)
@@ -340,7 +336,7 @@ module tb_toy_conv1;
 
             // W_tile: rows K, cols C_OUT
             if (r < k_count)
-              W_tile[r][cc] = W_full[k_start + r][cc];  // cc is output channel
+              W_tile[r][cc] = W_full[k_start + r][cc]; // cc is output channel
             else
               W_tile[r][cc] = $shortrealtobits(0.0);
           end
@@ -417,7 +413,6 @@ module tb_toy_conv1;
         for (r = 0; r < N; r++) begin
           if (r < row_count) begin
             global_row = row_start + r;
-
             for (cc = 0; cc < C_OUT; cc++) begin
               rtl_bits = dut.sys_array.psum[r][cc];
               rtl_sr   = $bitstoshortreal(rtl_bits);
@@ -440,7 +435,6 @@ module tb_toy_conv1;
       $display("==================================================");
       $display(" FULL TOY LAYER CHECK vs golden_output.csv ");
       $display("==================================================");
-
       for (m = 0; m < M; m++) begin
         for (c = 0; c < C_OUT; c++) begin
           hw_bits   = G_hw[m][c];
