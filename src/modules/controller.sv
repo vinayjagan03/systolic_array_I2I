@@ -21,9 +21,9 @@ module controller (
     // Scratchpad signals
     output logic sc_read_en,
     output logic sc_write_en,
-    output logic sc_data_in,
-    input logic sc_data_out,
-    output logic sc_addr,
+    output word_t sc_data_in,
+    input word_t sc_data_out,
+    output word_t sc_addr,
     input logic sc_ready,
     // sys array signals
     output logic start_matmul,
@@ -42,9 +42,9 @@ module controller (
             output_addr <= 0;
         end else begin
             state <= next_state;
-            input_addr <= (state == setup_matmul && AWADDR == 32'hF0000) ? AWADDR : input_addr;
-            weight_addr <= (state == setup_matmul && AWADDR == 32'hF0001) ? AWADDR : weight_addr;
-            output_addr <= (state == setup_matmul && AWADDR == 32'hF0003) ? AWADDR : output_addr;
+            input_addr <= (state == setup_matmul && AWADDR == 32'hF0000) ? WDATA : input_addr;
+            weight_addr <= (state == setup_matmul && AWADDR == 32'hF0001) ? WDATA : weight_addr;
+            output_addr <= (state == setup_matmul && AWADDR == 32'hF0003) ? WDATA : output_addr;
         end
     end
 
@@ -84,30 +84,44 @@ module controller (
         AWREADY = 1'b0;
         WDREADY = 1'b0;
         start_matmul = 1'b0;
+        RDATA = 0;
+        RDVALID = 1'b0;
+        sc_data_in = 0;
+        sc_write_en = 1'b0;
 
         case (state)
             start: begin
                 if (next_state == sc_read) begin
                     ARREADY = 1'b1;
+                    sc_read_en = 1'b1;
+                    sc_addr = ARADDR;
+                    RDATA = sc_data_out;
                 end
                 else if (next_state != start) begin
                     AWREADY = 1'b1;
+                end
+                if (next_state == matmul) begin
+                    start_matmul = 1'b1;
                 end
             end
             sc_read: begin
                 sc_read_en = 1'b1;
                 sc_addr = ARADDR;
+                RDATA = sc_data_out;
+                RDVALID = 1'b1;
             end
             sc_write: begin
                 sc_write_en = 1'b1;
                 sc_addr = AWADDR;
                 WDREADY = 1'b1;
+                sc_data_in = WDATA;
             end
             setup_matmul: begin
                 WDREADY = 1'b1;
             end
             matmul: begin
                 start_matmul = 1'b1;
+                WDREADY = matmul_finished;
             end
         endcase
     end

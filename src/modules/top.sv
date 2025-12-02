@@ -25,8 +25,8 @@ module top #(parameter N = 64)(
     output logic [N-1:0] sc_valid_write,
     output logic [N-1:0][31:0] sc_write_queue,
     output logic [N-1:0][31:0] sc_write_data,
-    input word_t [N-1:0] sc_x_data,
-    input word_t [N-1:0] sc_w_data    
+    input logic [N-1:0][31:0] sc_x_data,
+    input logic [N-1:0][31:0] sc_w_data    
 );
     logic controller_sc_read_en;
     logic controller_sc_write_en;
@@ -81,6 +81,7 @@ systolic_array_top #(
     .n_rst                     (n_rst),
     .x_addr                    (input_addr),
     .w_addr                    (weight_addr),
+    .y_addr                    (output_addr),
     .sc_x_queue                (sc_x_queue),
     .sc_w_queue                (sc_w_queue),
     .sc_valid_queue            (sc_valid_queue),
