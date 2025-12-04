@@ -1,6 +1,6 @@
 `include "systolic_array_pkg.svh"
 
-module processing_element #(parameter N=4)(
+module processing_element #(parameter N=64)(
     input logic clk, n_rst,
     input word_t x_i,
     input word_t w_i,

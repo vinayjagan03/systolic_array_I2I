@@ -3,7 +3,7 @@
 
 module tb_top;
 
-    localparam N = 4;
+    localparam N = 64;
 
     // ------------------------------------------
     // Clock / Reset
@@ -38,7 +38,7 @@ module tb_top;
 
 
     top #(
-    .N                 (4)
+    .N                 (64)
 ) DUT (
     .clk               (clk),
     .n_rst             (n_rst),
@@ -97,7 +97,7 @@ module tb_top;
                     @(negedge clk);
                     for (int i = 0; i < N; i++) begin
                         if (sc_valid_queue[i]) begin
-                            //$display("Reading Data[%0d]: %0d", sc_x_queue[i], $bitstoshortreal(sc[sc_x_queue[i]]));
+                            //$display("Reading Data[%08x]: %0d", sc_x_queue[i], $bitstoshortreal(sc[sc_x_queue[i]]));
                             sc_x_data[i] = sc[sc_x_queue[i]];
                             sc_w_data[i] = sc[sc_w_queue[i]];
                         end else begin
@@ -105,7 +105,7 @@ module tb_top;
                             sc_w_data[i] = 0;
                         end
                         if (sc_valid_write[i]) begin
-                            $display("Writing Data[%0d]: %0d", sc_write_queue[i], $bitstoshortreal(sc_write_data[i]));
+                            //$display("Writing Data[%08x]: %0d", sc_write_queue[i], $bitstoshortreal(sc_write_data[i]));
                             sc[sc_write_queue[i]] = sc_write_data[i];
                         end
                     end
@@ -117,7 +117,7 @@ module tb_top;
                 AWVALID = 1;
                 AWADDR = 32'h00000000;
                 WDVALID = 1;
-                for (int i = 0; i < 16; i++) begin
+                for (int i = 0; i < N*N; i++) begin
                     @(posedge clk);
                     WDATA = $shortrealtobits(shortreal'(i + 1));
                     AWADDR = 32'h00000000 + i;
@@ -130,11 +130,11 @@ module tb_top;
                 @(posedge clk);
                 // Write weight matrix (identity)
                 AWVALID = 1;
-                AWADDR = 32'h00000F00;
+                AWADDR = 32'h0000A000;
                 for (int r = 0; r < N; r++) begin
                     for (int c = 0; c < N; c++) begin
                         @(posedge clk);
-                        AWADDR = 32'h00000F00 + r*N + c;
+                        AWADDR = 32'h0000A000 + r*N + c;
                         WDATA = (r == c) ? $shortrealtobits(shortreal'(1)) : $shortrealtobits(shortreal'(0));
                         @(posedge clk);
                     end
@@ -142,7 +142,6 @@ module tb_top;
                 AWVALID = 0;
                 WDVALID = 0;
                 WDATA = 0;
-
                 // Setup matmul
                 @(posedge clk);
                 AWVALID = 1;
@@ -151,7 +150,7 @@ module tb_top;
                 @(posedge clk);
                 @(posedge clk);
                 AWADDR = 32'hF0001; // weight addr
-                WDATA = 32'h00000F00;
+                WDATA = 32'h0000A000;
                 @(posedge clk);
                 @(posedge clk);
                 AWADDR = 32'hF0003; // output addr
@@ -200,7 +199,7 @@ module tb_top;
                 @(posedge clk);
                 ARVALID = 1;
                 ARADDR = 32'h0000F000;
-                for (int i = 0; i < 16; i++) begin
+                for (int i = 0; i < N*N; i++) begin
                     @(posedge clk);
                     ARADDR = 32'h0000F000 + i;
                     @(negedge clk);

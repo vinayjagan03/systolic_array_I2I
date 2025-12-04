@@ -80,6 +80,12 @@ top.sim:
 
 	vsim -coverage -c -voptargs="+acc" tb_top -do  "run -all; quit"
 
+run_%:
+	vlog -compile_uselibs -cover bs -sv -pedanticerrors -lint +incdir+./src/include/ \
+		 ./src/modules/* \
+	     ./src/testbench/$*.sv
+		
+	vsim -coverage -c -voptargs="+acc" $* -do  "run -all; quit"
 
 lint_top:
 	vlog -compile_uselibs -cover bs -sv -pedanticerrors -lint +incdir+./src/include/ \

@@ -1,7 +1,7 @@
 `include "systolic_array_pkg.svh"
 
 module systolic_array_top #(
-    parameter N = 4
+    parameter N = 64
 ) (
     input logic clk, n_rst,
     input logic [31:0] x_addr,
@@ -30,7 +30,7 @@ module systolic_array_top #(
     logic sys_stall;
 
 
-    logic [10:0] counter;
+    logic [$clog2(2*N + N-1)-1:0] counter;
     localparam total_iter = 2*N + N-1; 
     localparam wait_cycles = 6;
 

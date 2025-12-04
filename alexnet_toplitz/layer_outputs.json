@@ -1,0 +1,46 @@
+{
+  "model": "alexnet_full",
+  "datatype": "fp32_hex",
+  "layers": [
+    {
+      "index": 1,
+      "name": "conv1",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 96,
+      "output_csv": "alexnet_toplitz/layers/001_conv1/golden_output.csv"
+    },
+    {
+      "index": 2,
+      "name": "conv2",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 256,
+      "output_csv": "alexnet_toplitz/layers/002_conv2/golden_output.csv"
+    },
+    {
+      "index": 3,
+      "name": "conv3",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 384,
+      "output_csv": "alexnet_toplitz/layers/003_conv3/golden_output.csv"
+    },
+    {
+      "index": 4,
+      "name": "conv4",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 384,
+      "output_csv": "alexnet_toplitz/layers/004_conv4/golden_output.csv"
+    },
+    {
+      "index": 5,
+      "name": "conv5",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 256,
+      "output_csv": "alexnet_toplitz/layers/005_conv5/golden_output.csv"
+    }
+  ]
+}
