@@ -14,6 +14,12 @@ module tb_top;
         forever #5 clk = ~clk;
     end
 
+    int counter = 0;
+
+    always @(posedge clk) begin
+        counter++;        
+    end
+
     logic AWVALID;
     logic [31:0] AWADDR;
     logic AWREADY;
@@ -38,7 +44,7 @@ module tb_top;
 
 
     top #(
-    .N                 (64)
+    .N                 (N)
 ) DUT (
     .clk               (clk),
     .n_rst             (n_rst),
@@ -70,7 +76,6 @@ module tb_top;
 
     word_t sc [logic[31:0]];    
     logic finished;
-    int counter = 0;
 
     initial begin
         n_rst = 0;
@@ -84,7 +89,6 @@ module tb_top;
         sc_x_data = 0;
         sc_w_data = 0;
         finished = 0;
-        counter = 0;
 
 
         @(posedge clk);
@@ -98,8 +102,8 @@ module tb_top;
                     for (int i = 0; i < N; i++) begin
                         if (sc_valid_queue[i]) begin
                             //$display("Reading Data[%08x]: %0d", sc_x_queue[i], $bitstoshortreal(sc[sc_x_queue[i]]));
-                            sc_x_data[i] = sc[sc_x_queue[i]];
-                            sc_w_data[i] = sc[sc_w_queue[i]];
+                            sc_x_data[i] = sc.exists(sc_x_queue[i]) ? sc[sc_x_queue[i]] : 0;
+                            sc_w_data[i] = sc.exists(sc_w_queue[i]) ? sc[sc_w_queue[i]] : 0;
                         end else begin
                             sc_x_data[i] = 0;
                             sc_w_data[i] = 0;
@@ -114,6 +118,8 @@ module tb_top;
             begin
                 // Write input matrix
                 @(posedge clk);
+                counter = 0;
+                $display("Loading input matrix...");
                 AWVALID = 1;
                 AWADDR = 32'h00000000;
                 WDVALID = 1;
@@ -126,8 +132,11 @@ module tb_top;
                 AWVALID = 0;
                 WDVALID = 0;
                 WDATA = 0;
+                $display("Input matrix loaded. Took %0d cycles.", counter);
 
                 @(posedge clk);
+                counter = 0;
+                $display("Loading weight matrix...");
                 // Write weight matrix (identity)
                 AWVALID = 1;
                 AWADDR = 32'h0000A000;
@@ -142,6 +151,10 @@ module tb_top;
                 AWVALID = 0;
                 WDVALID = 0;
                 WDATA = 0;
+                $display("Weight matrix loaded. Took %0d cycles.", counter);
+
+                $display("Loading address operands for matrix multiplication...");
+                counter = 0;
                 // Setup matmul
                 @(posedge clk);
                 AWVALID = 1;
@@ -159,17 +172,19 @@ module tb_top;
                 @(posedge clk);
                 AWVALID = 0;
                 WDATA = 0;
+                $display("Address operands loaded. Took %0d cycles.", counter);
 
                 // Start matmul
+                $display("Starting matrix multiplication...");
+                counter = 0;
                 @(posedge clk);
                 AWVALID = 1;
                 AWADDR = 32'h100000;
                 @(posedge clk);
 
                 while (WDREADY == 0) begin
-                    counter++;
                     @(posedge clk);
-            //         if (counter % 6 != 0 && (counter * 6) >= 2*N + N-1) continue;
+                    //if (counter % 6 != 0 && (counter * 6) >= 2*N + N-1) continue;
             //                     $write("\nx: ");
             // for (int j = 0; j < N*N; j++) begin
             //     if (j%N == 0) begin
@@ -194,6 +209,7 @@ module tb_top;
             // $display("");
                 end
                 AWVALID = 0;
+                $display("Matrix multiplication completed successfully. Took %0d cycles.", counter);
 
                 // Read output matrix
                 @(posedge clk);
@@ -203,11 +219,13 @@ module tb_top;
                     @(posedge clk);
                     ARADDR = 32'h0000F000 + i;
                     @(negedge clk);
-                    $display("Output Data[%0d]: %0d", ARADDR, $bitstoshortreal(RDATA));
+                    //$display("Output Data[%0d]: %0d", ARADDR, $bitstoshortreal(RDATA));
+                    assert($bitstoshortreal(RDATA) == shortreal'(i + 1)) else $fatal("Mismatch at output index %0d: expected %0f, got %0f", i, shortreal'(i + 1), $bitstoshortreal(RDATA));
                     @(posedge clk);
                     ARADDR = 32'h0000F000 + i + 1;
                 end
                 ARVALID = 0;
+                $display("Output matrix verified successfully!");
                 finished = 1;
             end
         join

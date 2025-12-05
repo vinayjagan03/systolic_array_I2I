@@ -80,12 +80,24 @@ top.sim:
 
 	vsim -coverage -c -voptargs="+acc" tb_top -do  "run -all; quit"
 
+top.wav:
+	vlog -compile_uselibs -cover bs -sv -pedanticerrors -lint +incdir+./src/include/ \
+		 ./src/modules/fp32_add.sv ./src/modules/fp32_mul.sv ./src/modules/fp32_mac.sv \
+	     ./src/modules/processing_element.sv \
+	     ./src/modules/systolic_array.sv \
+	     ./src/modules/systolic_array_top.sv \
+		 ./src/modules/controller.sv \
+		 ./src/modules/top.sv \
+	     ./src/testbench/tb_top.sv
+
+	vsim -coverage -voptargs="+acc" tb_top -do "view objects; do ./waveforms/wave.do; run -all;"
+
 run_%:
 	vlog -compile_uselibs -cover bs -sv -pedanticerrors -lint +incdir+./src/include/ \
 		 ./src/modules/* \
 	     ./src/testbench/$*.sv
 		
-	vsim -coverage -c -voptargs="+acc" $* -do  "run -all; quit"
+	vsim -suppress -coverage -c -voptargs="+acc" $* -do  "run -all; quit"
 
 lint_top:
 	vlog -compile_uselibs -cover bs -sv -pedanticerrors -lint +incdir+./src/include/ \

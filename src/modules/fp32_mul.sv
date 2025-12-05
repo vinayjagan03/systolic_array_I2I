@@ -11,6 +11,8 @@ module fp32_mul #(
   input  wire        valid_in,
   input  wire [31:0] a,
   input  wire [31:0] b,
+  input logic [31:0] x_i, w_i,
+  output logic [31:0] x_o, w_o,
   output wire        valid_out,
   output wire [31:0] y
 );
@@ -21,6 +23,8 @@ module fp32_mul #(
   reg  [8:0]  s1_exp_sum;
   reg  [47:0] s1_prod;
   reg         s1_a_zero, s1_b_zero;
+
+  logic [31:0] x1, x2, w1, w2;
 
   // Stage 1
   always @(posedge clk or negedge rst_n) begin
@@ -37,6 +41,8 @@ module fp32_mul #(
       s1_a_zero  <= 1'b1;
       s1_b_zero  <= 1'b1;
     end else begin
+      x1 <= x_i;
+      w1 <= w_i;
       v1      <= valid_in;
 
       a_sign  = a[31]; a_exp = a[30:23]; a_frac = a[22:0];
@@ -66,9 +72,13 @@ module fp32_mul #(
     if (!rst_n) begin
       v2 <= 1'b0;
       y2 <= 32'h0000_0000;
+      x2 <= 0;
+      w2 <= 0;
     end else begin
       v2 <= v1;
       y2 <= out_word;
+      x2 <= x1;
+      w2 <= w1;
     end
   end
 
@@ -102,5 +112,7 @@ module fp32_mul #(
 
   assign valid_out = v2;
   assign y         = y2;
+  assign x_o       = x2;
+  assign w_o       = w2;
 
 endmodule

@@ -30,13 +30,11 @@ module systolic_array_top #(
     logic sys_stall;
 
 
-    logic [$clog2(2*N + N-1)-1:0] counter;
-    localparam total_iter = 2*N + N-1; 
-    localparam wait_cycles = 6;
+    localparam total_iter = 2*N + 4; 
+    logic [$clog2(total_iter)-1:0] counter;
+    localparam wait_cycles = 5;
 
     logic [$clog2(N)-1:0] y_ptr;
-
-    logic [2:0] cycle_wait;
 
     word_t [N-1:0] x_data;
     word_t [N-1:0] w_data;
@@ -54,21 +52,19 @@ module systolic_array_top #(
     .stall      (sys_stall)
 );
 
-    typedef enum logic[3:0] { start, queue, comp, output_arr, finish, controller } state_t;
+    typedef enum logic[3:0] { start, queue, output_arr, finish, controller } state_t;
     state_t state, next_state;
 
     always_ff @(posedge clk, negedge n_rst) begin
         if (!n_rst) begin
             state <= start;
             counter <= 0;
-            cycle_wait <= 0;
             x_data <= 0;
             w_data <= 0;
             y_ptr <= 0;
         end else begin
             state <= next_state;
             counter <= (state == queue) ? counter + 1 : (state == start ? 0 : counter);
-            cycle_wait <= (state == comp) ? cycle_wait + 1 : 0;
             x_data <= (state == queue || next_state == queue) ? sc_x_data : x_data;
             w_data <= (state == queue || next_state == queue) ? sc_w_data : w_data;
             y_ptr <= (state == output_arr) ? y_ptr + 1 : 0;
@@ -89,10 +85,6 @@ module systolic_array_top #(
                 if (counter == total_iter)
                     next_state = output_arr;
                 else
-                    next_state = comp;
-            end
-            comp: begin
-                if (!sys_stall)
                     next_state = queue;
             end
             output_arr: begin
@@ -182,9 +174,6 @@ module systolic_array_top #(
                 start_sys = 1'b0;
             end
             queue: begin
-                start_sys = 1'b1;
-            end
-            comp: begin
                 start_sys = 1'b1;
             end
             output_arr: begin

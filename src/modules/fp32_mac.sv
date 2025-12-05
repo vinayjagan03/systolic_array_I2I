@@ -11,6 +11,8 @@ module fp32_mac (
   input  wire [31:0] a,
   input  wire [31:0] b,
   input  wire [31:0] c,
+  input logic [31:0] x_i, w_i,
+  output logic [31:0] x_o, w_o,
   input  wire        use_acc,
   input  wire        clr_acc,
   output wire        valid_out,
@@ -23,12 +25,18 @@ module fp32_mac (
   wire        m_vld;
   wire [31:0] m_res;
 
-  fp32_mul #(.PIPE_STAGES(2)) U_MUL (
+  logic [31:0] x_inter, w_inter;
+
+  fp32_mul U_MUL (
     .clk       (clk),
     .rst_n     (rst_n),
     .valid_in  (valid_in),
     .a         (a),
     .b         (b),
+    .x_i       (x_i),
+    .w_i       (w_i),
+    .x_o       (x_inter),
+    .w_o       (w_inter),
     .valid_out (m_vld),
     .y         (m_res)
   );
@@ -62,12 +70,16 @@ module fp32_mac (
   wire        a_vld;
   wire [31:0] add_res;
 
-  fp32_add #(.PIPE_STAGES(3)) U_ADD (
+  fp32_add U_ADD (
     .clk       (clk),
     .rst_n     (rst_n),
     .valid_in  (add_vin),
     .a         (add_lhs),
     .b         (add_rhs),
+    .x_i       (x_inter),
+    .w_i       (w_inter),
+    .x_o       (x_o),
+    .w_o       (w_o),
     .valid_out (a_vld),
     .y         (add_res)
   );
