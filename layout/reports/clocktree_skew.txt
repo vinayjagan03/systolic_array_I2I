@@ -1,0 +1,121 @@
+Updating ideal nets and annotations...
+Clock tree spec update: Ideal nets, transition and delay annotations were updated to match active timing constraints.
+Updating ideal nets and annotations done. (took cpu=0:00:00.3 real=0:00:00.3)
+No differences between SDC and CTS ideal net status found.
+Clock tree timing engine global stage delay update for default_emulate_delay_corner:both.early...
+Clock tree timing engine global stage delay update for default_emulate_delay_corner:both.early done. (took cpu=0:00:00.0 real=0:00:00.0)
+Clock tree timing engine global stage delay update for default_emulate_delay_corner:both.late...
+Clock tree timing engine global stage delay update for default_emulate_delay_corner:both.late done. (took cpu=0:00:00.0 real=0:00:00.0)
+
+Skew Group Structure:
+=====================
+
+------------------------------------------------------------------------------------------
+Skew Group                             Sources    Constrained Sinks    Unconstrained Sinks
+------------------------------------------------------------------------------------------
+clk/default_emulate_constraint_mode       1              915                    0
+------------------------------------------------------------------------------------------
+
+Skew Group Summary:
+===================
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Timing Corner                              Skew Group                             ID Target    Min ID    Max ID    Avg ID    Std.Dev. ID    Skew Target Type    Skew Target    Skew     Skew window occupancy
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+default_emulate_delay_corner:both.early    clk/default_emulate_constraint_mode        -        0.000     0.000     0.000        0.000       ignored                  -         0.000              -
+default_emulate_delay_corner:both.late     clk/default_emulate_constraint_mode    none         0.000     0.000     0.000        0.000       explicit             0.100         0.000    100% {0.000, 0.000}
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+* - indicates that target was not met.
+
+Skew Group Min/Max path pins:
+=============================
+
+----------------------------------------------------------------------------------------------------------------------
+Timing Corner                              Skew Group                             Min ID    PathID    Max ID    PathID
+----------------------------------------------------------------------------------------------------------------------
+default_emulate_delay_corner:both.early    clk/default_emulate_constraint_mode    0.000       1       0.000       2
+-    min u_systolic_array_top/state_reg[2]/CK
+-    max u_controller/weight_addr_reg[0]/CK
+default_emulate_delay_corner:both.late     clk/default_emulate_constraint_mode    0.000       3       0.000       4
+-    min u_systolic_array_top/state_reg[2]/CK
+-    max u_controller/weight_addr_reg[0]/CK
+----------------------------------------------------------------------------------------------------------------------
+
+Timing for timing corner default_emulate_delay_corner:both.early, min clock_path:
+=================================================================================
+
+PathID    : 1
+Path type : skew group clk/default_emulate_constraint_mode (path 1 of 1)
+Start     : clk
+End       : u_systolic_array_top/state_reg[2]/CK
+Delay     : 0.000
+
+----------------------------------------------------------------------------------------------
+Name  Lib cell  Event  Incr   Arrival  Slew   Cap    Location         Distance  Fanout  Status
+                       (ns)   (ns)     (ns)   (fF)                    (um)              
+-- Clockpath trace ---------------------------------------------------------------------------
+clk
+-     -         rise   -       0.000   0.000  0.000  (0.000,75.810)   -          915    
+u_systolic_array_top/state_reg[2]/CK
+-     DFFR_X1   rise   0.000   0.000   0.000  -      (44.825,85.260)   54.275   -       
+----------------------------------------------------------------------------------------------
+
+Timing for timing corner default_emulate_delay_corner:both.early, max clock_path:
+=================================================================================
+
+PathID    : 2
+Path type : skew group clk/default_emulate_constraint_mode (path 1 of 1)
+Start     : clk
+End       : u_controller/weight_addr_reg[0]/CK
+Delay     : 0.000
+
+----------------------------------------------------------------------------------------------
+Name  Lib cell  Event  Incr   Arrival  Slew   Cap    Location         Distance  Fanout  Status
+                       (ns)   (ns)     (ns)   (fF)                    (um)              
+-- Clockpath trace ---------------------------------------------------------------------------
+clk
+-     -         rise   -       0.000   0.000  0.000  (0.000,75.810)   -          915    
+u_controller/weight_addr_reg[0]/CK
+-     DFFR_X1   rise   0.000   0.000   0.000  -      (65.155,94.500)   83.845   -       
+----------------------------------------------------------------------------------------------
+
+Timing for timing corner default_emulate_delay_corner:both.late, min clock_path:
+================================================================================
+
+PathID    : 3
+Path type : skew group clk/default_emulate_constraint_mode (path 1 of 1)
+Start     : clk
+End       : u_systolic_array_top/state_reg[2]/CK
+Delay     : 0.000
+
+----------------------------------------------------------------------------------------------
+Name  Lib cell  Event  Incr   Arrival  Slew   Cap    Location         Distance  Fanout  Status
+                       (ns)   (ns)     (ns)   (fF)                    (um)              
+-- Clockpath trace ---------------------------------------------------------------------------
+clk
+-     -         rise   -       0.000   0.000  0.000  (0.000,75.810)   -          915    
+u_systolic_array_top/state_reg[2]/CK
+-     DFFR_X1   rise   0.000   0.000   0.000  -      (44.825,85.260)   54.275   -       
+----------------------------------------------------------------------------------------------
+
+Timing for timing corner default_emulate_delay_corner:both.late, max clock_path:
+================================================================================
+
+PathID    : 4
+Path type : skew group clk/default_emulate_constraint_mode (path 1 of 1)
+Start     : clk
+End       : u_controller/weight_addr_reg[0]/CK
+Delay     : 0.000
+
+----------------------------------------------------------------------------------------------
+Name  Lib cell  Event  Incr   Arrival  Slew   Cap    Location         Distance  Fanout  Status
+                       (ns)   (ns)     (ns)   (fF)                    (um)              
+-- Clockpath trace ---------------------------------------------------------------------------
+clk
+-     -         rise   -       0.000   0.000  0.000  (0.000,75.810)   -          915    
+u_controller/weight_addr_reg[0]/CK
+-     DFFR_X1   rise   0.000   0.000   0.000  -      (65.155,94.500)   83.845   -       
+----------------------------------------------------------------------------------------------
+
+

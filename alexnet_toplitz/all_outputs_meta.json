@@ -1,0 +1,52 @@
+{
+  "model": "alexnet_full",
+  "datatype": "fp32_hex",
+  "combined_output_csv": "alexnet_toplitz/golden_all_layers.csv",
+  "layers": [
+    {
+      "index": 1,
+      "name": "conv1",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 96,
+      "start_index": 0,
+      "num_elements": 301056
+    },
+    {
+      "index": 2,
+      "name": "conv2",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 256,
+      "start_index": 301056,
+      "num_elements": 802816
+    },
+    {
+      "index": 3,
+      "name": "conv3",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 384,
+      "start_index": 1103872,
+      "num_elements": 1204224
+    },
+    {
+      "index": 4,
+      "name": "conv4",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 384,
+      "start_index": 2308096,
+      "num_elements": 1204224
+    },
+    {
+      "index": 5,
+      "name": "conv5",
+      "out_h": 56,
+      "out_w": 56,
+      "out_c": 256,
+      "start_index": 3512320,
+      "num_elements": 802816
+    }
+  ]
+}

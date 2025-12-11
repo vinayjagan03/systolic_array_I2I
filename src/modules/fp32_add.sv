@@ -1,181 +1,257 @@
-// -----------------------------------------------------------------------------
-// Synthesizable FP32 adder (y=a+b), 3-stage pipeline
-// - Normals, +/-0; subnormals flushed to 0; truncate rounding
-// -----------------------------------------------------------------------------
-module fp32_add #(
-  parameter PIPE_STAGES = 3
-)(
-  input  wire        clk,
-  input  wire        rst_n,
-  input  wire        valid_in,
-  input  wire [31:0] a,
-  input  wire [31:0] b,
-  output wire        valid_out,
-  output wire [31:0] y
+module fp32_add (
+  input  logic        clk,       // unused (combinational core)
+  input  logic        rst_n,     // unused (combinational core)
+  input  logic        valid_in,
+  input  logic [31:0] a,
+  input  logic [31:0] b,
+  input  logic [31:0] x_i, w_i,
+  output logic [31:0] x_o, w_o,
+  output logic        valid_out,
+  output logic [31:0] y
 );
 
-  // ---------- Stage 1: unpack, choose big/small, align ----------
-  reg        v1;
-  reg        s1_sign_big, s1_sign_sml;
-  reg [7:0]  s1_exp_big,  s1_exp_sml;
-  reg [27:0] s1_mant_big, s1_mant_sml; // 24 + 4 guard bits
-  reg        s1_subtract;
+  // IEEE 754 single precision parameters
+  localparam int EXP_BITS  = 8;
+  localparam int FRAC_BITS = 23;
+  localparam int BIAS      = 127;
 
-  always @(posedge clk or negedge rst_n) begin
-    reg        a_s, b_s, swap;
-    reg [7:0]  a_e, b_e, exp_diff;
-    reg [22:0] a_f, b_f;
-    reg [23:0] M_a, M_b;
-    reg [27:0] M_big_28, M_sml_28;
-    reg [7:0]  E_big, E_sml;
-    reg        S_big, S_sml;
+  // Unpacked fields
+  logic                 sign_a, sign_b;
+  logic [EXP_BITS-1:0]  exp_a,  exp_b;
+  logic [FRAC_BITS-1:0] frac_a, frac_b;
 
-    if (!rst_n) begin
-      v1            <= 1'b0;
-      s1_sign_big   <= 1'b0; s1_sign_sml <= 1'b0;
-      s1_exp_big    <= 8'd0; s1_exp_sml  <= 8'd0;
-      s1_mant_big   <= 28'd0; s1_mant_sml<= 28'd0;
-      s1_subtract   <= 1'b0;
-    end else begin
-      v1 <= valid_in;
+  // Result fields
+  logic                 sign_res;
+  logic [EXP_BITS-1:0]  exp_res;
+  logic [FRAC_BITS-1:0] frac_res;
 
-      a_s = a[31]; a_e = a[30:23]; a_f = a[22:0];
-      b_s = b[31]; b_e = b[30:23]; b_f = b[22:0];
+  // Special-case flags
+  logic is_zero_a, is_zero_b;
+  logic is_inf_a,  is_inf_b;
+  logic is_nan_a,  is_nan_b;
 
-      // Flush subnormals to 0, otherwise add hidden 1
-      M_a = (a_e == 8'd0) ? 24'd0 : {1'b1, a_f};
-      M_b = (b_e == 8'd0) ? 24'd0 : {1'b1, b_f};
+  // Mantissas and extended mantissas
+  logic [23:0] mant_a, mant_b;
+  logic [27:0] mant_a_ext, mant_b_ext;
 
-      // Choose bigger magnitude (by exponent then mantissa)
-      swap = (b_e > a_e) || ((b_e == a_e) && (b_f > a_f));
+  // Effective exponents
+  logic [8:0]  exp_a_eff, exp_b_eff;
 
-      S_big = swap ? b_s : a_s;
-      E_big = swap ? b_e : a_e;
-      M_big_28 = { (swap ? M_b : M_a), 4'b0 };
+  // Bigger/smaller selection
+  logic        a_bigger;
+  logic [8:0]  exp_big, exp_sml;
+  logic [27:0] mant_big_ext, mant_sml_ext;
+  logic        sign_big, sign_sml;
 
-      S_sml = swap ? a_s : b_s;
-      E_sml = swap ? a_e : b_e;
-      // align small
-      exp_diff = (E_big >= E_sml) ? (E_big - E_sml) : 8'd0;
-      if (exp_diff >= 8'd27)  M_sml_28 = 28'd0;
-      else                    M_sml_28 = ({ (swap ? M_a : M_b), 4'b0 } >> exp_diff);
+  // Alignment / shift
+  logic [4:0]  shift_amt;
+  logic [27:0] mant_sml_shifted;
+  logic        sticky;
 
-      s1_sign_big <= S_big;
-      s1_exp_big  <= E_big;
-      s1_mant_big <= M_big_28;
-      s1_sign_sml <= S_sml;
-      s1_exp_sml  <= E_sml;
-      s1_mant_sml <= M_sml_28;
-      s1_subtract <= (S_big ^ S_sml);
-    end
-  end
+  // Add/sub
+  logic [27:0] mant_sum_ext;
+  logic        same_sign;
 
-  // ---------- Stage 2: add/sub mantissas ----------
-  reg        v2;
-  reg        s2_sign;
-  reg [7:0]  s2_exp;
-  reg [28:0] s2_mant; // one extra bit for carry/borrow
-  reg        s2_is_zero;
+  // Normalization
+  logic [27:0] mant_norm_ext;
+  logic [8:0]  exp_norm;
 
-  always @(posedge clk or negedge rst_n) begin
-    reg [28:0] mant_res;
-    if (!rst_n) begin
-      v2        <= 1'b0;
-      s2_sign   <= 1'b0;
-      s2_exp    <= 8'd0;
-      s2_mant   <= 29'd0;
-      s2_is_zero<= 1'b0;
-    end else begin
-      v2      <= v1;
-      s2_sign <= s1_sign_big;
-      s2_exp  <= s1_exp_big;
+  // Rounding
+  logic [23:0] mant_round;
+  logic        guard, round_bit, sticky_bit, round_inc;
 
-      if (s1_subtract)
-        mant_res = {1'b0, s1_mant_big} - {1'b0, s1_mant_sml};
-      else
-        mant_res = {1'b0, s1_mant_big} + {1'b0, s1_mant_sml};
+  always_comb begin
+    // Default passthroughs / control
+    x_o       = x_i;
+    w_o       = w_i;
+    valid_out = valid_in;
 
-      s2_mant    <= mant_res;
-      s2_is_zero <= (mant_res == 29'd0);
-    end
-  end
+    // Unpack operands
+    sign_a = a[31];
+    exp_a  = a[30:23];
+    frac_a = a[22:0];
 
-  // ---------- Stage 3: normalize & pack ----------
-  reg        v3;
-  reg [31:0] y3;
+    sign_b = b[31];
+    exp_b  = b[30:23];
+    frac_b = b[22:0];
 
-  // leading-zero count for 29-bit value (simple loop; synthesizes as priority enc)
-function [4:0] lz29;
-  input [28:0] x;
-  integer i;
-  begin
-    if (x[28]) begin
-      lz29 = 5'd0;    // MSB already 1 → no leading zeros
-    end
-    else begin
-      lz29 = 5'd29;   // default: all zero
-      for_loop_end: for (i = 27; i >= 0; i = i-1) begin
-        if (x[i]) begin
-          lz29 = 5'(28 - i); // # of zeros before first '1'
-          disable for_loop_end; // exit early once found
-        end
-      end
-    end
-  end
-endfunction
+    // Detect specials
+    is_zero_a = (exp_a == 8'd0) && (frac_a == 23'd0);
+    is_zero_b = (exp_b == 8'd0) && (frac_b == 23'd0);
 
+    is_inf_a  = (exp_a == 8'hFF) && (frac_a == 23'd0);
+    is_inf_b  = (exp_b == 8'hFF) && (frac_b == 23'd0);
 
-  always @(posedge clk or negedge rst_n) begin
-    reg [31:0] out_word;
-    reg [28:0] mant;
-    reg [7:0]  expn;
-    reg [22:0] frac;
-    reg [4:0]  lz;
-    if (!rst_n) begin
-      v3 <= 1'b0;
-      y3 <= 32'h0000_0000;
-    end else begin
-      v3 <= v2;
-      out_word = 32'h0000_0000;
+    is_nan_a  = (exp_a == 8'hFF) && (frac_a != 23'd0);
+    is_nan_b  = (exp_b == 8'hFF) && (frac_b != 23'd0);
 
-      if (s2_is_zero) begin
-        out_word = {s2_sign, 31'h0};
+    // Default result - quiet NaN
+    sign_res = 1'b0;
+    exp_res  = 8'hFF;
+    frac_res = 23'h400000; // qNaN payload
+
+    // ---------------- Special cases ----------------
+    if (is_nan_a || is_nan_b) begin
+      // NaN propagates (already set)
+      sign_res = 1'b0;
+      exp_res  = 8'hFF;
+      frac_res = 23'h400000;
+    end else if (is_inf_a && is_inf_b) begin
+      if (sign_a == sign_b) begin
+        // inf + inf (same sign)
+        sign_res = sign_a;
+        exp_res  = 8'hFF;
+        frac_res = 23'd0;
       end else begin
-        mant = s2_mant;
-        expn = s2_exp;
+        // +inf + -inf => NaN
+        sign_res = 1'b0;
+        exp_res  = 8'hFF;
+        frac_res = 23'h400000;
+      end
+    end else if (is_inf_a) begin
+      sign_res = sign_a;
+      exp_res  = 8'hFF;
+      frac_res = 23'd0;
+    end else if (is_inf_b) begin
+      sign_res = sign_b;
+      exp_res  = 8'hFF;
+      frac_res = 23'd0;
+    end else if (is_zero_a && is_zero_b) begin
+      // Both zero (choose a sign convention; here AND)
+      sign_res = sign_a & sign_b;
+      exp_res  = 8'd0;
+      frac_res = 23'd0;
+    end else begin
+      // ---------------- Normal / subnormal path ----------------
 
-        // If carry into bit28: shift right 1, bump exp
-        if (mant[28]) begin
-          mant = mant >> 1;
-          expn = expn + 8'd1;
+      // Build mantissas with implicit bit
+      mant_a = (exp_a == 8'd0) ? {1'b0, frac_a} : {1'b1, frac_a};
+      mant_b = (exp_b == 8'd0) ? {1'b0, frac_b} : {1'b1, frac_b};
+
+      // Extend mantissas to include GRS bits
+      mant_a_ext = {mant_a, 3'b000};
+      mant_b_ext = {mant_b, 3'b000};
+
+      // Effective exponents (subnormal => exponent 1)
+      exp_a_eff = (exp_a == 8'd0) ? 9'd1 : {1'b0, exp_a};
+      exp_b_eff = (exp_b == 8'd0) ? 9'd1 : {1'b0, exp_b};
+
+      // Choose bigger operand (by exponent, then mantissa)
+      if ( (exp_a_eff > exp_b_eff) ||
+           ((exp_a_eff == exp_b_eff) && (mant_a_ext >= mant_b_ext)) ) begin
+        a_bigger     = 1'b1;
+        exp_big      = exp_a_eff;
+        exp_sml      = exp_b_eff;
+        mant_big_ext = mant_a_ext;
+        mant_sml_ext = mant_b_ext;
+        sign_big     = sign_a;
+        sign_sml     = sign_b;
+      end else begin
+        a_bigger     = 1'b0;
+        exp_big      = exp_b_eff;
+        exp_sml      = exp_a_eff;
+        mant_big_ext = mant_b_ext;
+        mant_sml_ext = mant_a_ext;
+        sign_big     = sign_b;
+        sign_sml     = sign_a;
+      end
+
+      // Align smaller mantissa
+      shift_amt = (exp_big > exp_sml) ? (exp_big - exp_sml) : 5'd0;
+
+      if (shift_amt == 0) begin
+        mant_sml_shifted = mant_sml_ext;
+        sticky           = 1'b0;
+      end else if (shift_amt >= 5'd27) begin
+        mant_sml_shifted = 28'd0;
+        sticky           = (mant_sml_ext != 28'd0);
+      end else begin
+        // Shift-right with sticky
+        logic [27:0] tmp_shifted;
+        logic [27:0] tmp_dropped;
+
+        tmp_shifted       = mant_sml_ext >> shift_amt;
+        tmp_dropped       = mant_sml_ext & ((28'h1 << shift_amt) - 1);
+        mant_sml_shifted  = tmp_shifted;
+        sticky            = (tmp_dropped != 28'd0);
+      end
+
+      // Merge sticky into LSB
+      if (sticky)
+        mant_sml_shifted[0] = 1'b1;
+
+      // Add or subtract
+      same_sign = (sign_big == sign_sml);
+      if (same_sign) begin
+        mant_sum_ext = mant_big_ext + mant_sml_shifted;
+        sign_res     = sign_big;
+      end else begin
+        mant_sum_ext = mant_big_ext - mant_sml_shifted;
+        sign_res     = sign_big; // sign of larger magnitude
+      end
+
+      // Zero result after subtraction
+      if (mant_sum_ext == 28'd0) begin
+        sign_res = 1'b0;
+        exp_res  = 8'd0;
+        frac_res = 23'd0;
+      end else begin
+        // --------------- Normalization ---------------
+        mant_norm_ext = mant_sum_ext;
+        exp_norm      = exp_big;
+
+        // Possible overflow when adding same-sign
+        if (same_sign && mant_norm_ext[27]) begin
+          mant_norm_ext = mant_norm_ext >> 1;
+          exp_norm      = exp_norm + 9'd1;
         end else begin
-          // Normalize left if needed
-          if (mant[27:24] == 4'b0000) begin
-            lz = lz29(mant);
-            if (lz < 5'd29) begin
-              mant = mant << lz;
-              if (expn > lz) expn = expn - lz; else expn = 8'd0;
-            end else begin
-              mant = 29'd0;
-              expn = 8'd0;
-            end
+          // Normalize left so that leading 1 is at bit 26
+          while ( (mant_norm_ext[26] == 1'b0) &&
+                  (exp_norm > 0) &&
+                  (mant_norm_ext != 28'd0) ) begin
+            mant_norm_ext = mant_norm_ext << 1;
+            exp_norm      = exp_norm - 9'd1;
           end
         end
 
-        frac = mant[26:4]; // truncate
+        // --------------- Rounding: round to nearest-even ---------------
+        mant_round = mant_norm_ext[26:3];  // 1.xxx (24 bits)
+        guard      = mant_norm_ext[2];
+        round_bit  = mant_norm_ext[1];
+        sticky_bit = mant_norm_ext[0];
 
-        if (expn >= 8'hFF)
-          out_word = {s2_sign, 8'hFF, 23'h0};
-        else if (expn == 8'd0)
-          out_word = {s2_sign, 31'h0};
-        else
-          out_word = {s2_sign, expn, frac};
+        // Increment if guard==1 and (round_bit or sticky_bit or LSB is 1)
+        round_inc = guard && (round_bit || sticky_bit || mant_round[0]);
+
+        if (round_inc) begin
+          mant_round = mant_round + 24'd1;
+          // Handle mantissa overflow on rounding
+          if (mant_round == 24'h1000000) begin
+            // 1.000...0 -> shift and increment exponent
+            mant_round = mant_round >> 1;
+            exp_norm   = exp_norm + 9'd1;
+          end
+        end
+
+        // --------------- Pack result, check overflow/underflow ---------------
+        if (exp_norm >= 9'd255) begin
+          // Overflow => infinity
+          exp_res  = 8'hFF;
+          frac_res = 23'd0;
+        end else if (exp_norm <= 9'd0) begin
+          // Underflow: flush to zero (simplified)
+          exp_res  = 8'd0;
+          frac_res = 23'd0;
+          // sign_res unchanged
+        end else begin
+          exp_res  = exp_norm[7:0];
+          frac_res = mant_round[22:0]; // drop implicit 1
+        end
       end
-      y3 <= out_word;
     end
-  end
 
-  assign valid_out = v3;
-  assign y         = y3;
+    // Pack final result
+    y = {sign_res, exp_res, frac_res};
+  end
 
 endmodule

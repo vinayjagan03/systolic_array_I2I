@@ -1,0 +1,48 @@
+*** time_design #2 [begin] () : totSession cpu/real = 0:01:31.4/0:02:07.6 (0.7), mem = 3585.3M
+Start to check current routing status for nets...
+All nets are already routed correctly.
+End to check current routing status for nets (mem=3558.9M)
+Starting delay calculation for Hold views
+AAE_INFO: opIsDesignInPostRouteState() is 0
+#################################################################################
+# Design Stage: PreRoute
+# Design Name: top
+# Design Mode: 90nm
+# Analysis Mode: MMMC Non-OCV 
+# Parasitics Mode: No SPEF/RCDB 
+# Signoff Settings: SI Off 
+#################################################################################
+Calculate delays in Single mode...
+Start delay calculation (fullDC) (1 T). (MEM=3592.52)
+Total number of fetched objects 3402
+AAE_INFO: Total number of nets for which stage creation was skipped for all views 0
+End delay calculation. (MEM=3619.13 CPU=0:00:00.5 REAL=0:00:01.0)
+End delay calculation (fullDC). (MEM=3619.13 CPU=0:00:00.6 REAL=0:00:01.0)
+Turning on fast DC mode.
+*** Done Building Timing Graph (cpu=0:00:01.0 real=0:00:01.0 totSessionCpu=0:01:33 mem=3619.1M)
+
+OptSummary:
+
+------------------------------------------------------------------
+         time_design Summary
+------------------------------------------------------------------
+
+Hold views included:
+ default_emulate_view 
+
++--------------------+---------+---------+---------+
+|     Hold mode      |   all   | reg2reg | default |
++--------------------+---------+---------+---------+
+|           WNS (ns):| -0.196  |  0.069  | -0.196  |
+|           TNS (ns):|-175.609 |  0.000  |-175.609 |
+|    Violating Paths:|   916   |    0    |   916   |
+|          All Paths:|  1922   |  1007   |   920   |
++--------------------+---------+---------+---------+
+
+Density: 69.677%
+Routing Overflow: 0.00% H and 0.09% V
+------------------------------------------------------------------
+Reported timing to dir ./timingReports
+Total CPU time: 1.54 sec
+Total Real time: 1.0 sec
+Total Memory Usage: 3548.824219 Mbytes

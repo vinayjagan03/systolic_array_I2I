@@ -1,7 +1,7 @@
 `include "systolic_array_pkg.svh"
 
 module tb_systolic_array;
-    parameter N = 64;
+    parameter N = 4;
     parameter CLK_PERIOD = 10;
 
     logic clk, n_rst;
@@ -62,41 +62,44 @@ module tb_systolic_array;
                 w_in = 0;
             end
             @(negedge clk);
+            @(posedge clk);
+            @(negedge clk);
             while (stall) begin 
                 @(posedge clk); 
                 @(negedge clk);
             end
-            // $display("\nCycle %0d", i+1);
-            // $write("x_in: ");
-            // for (int j = 0; j < N; j++) begin
-            //     $write("%p ", $bitstoshortreal(x_in[j]));
-            // end
-            // $write("\nw_in: ");
-            // for (int j = 0; j < N; j++) begin
-            //     $write("%p ", $bitstoshortreal(w_in[j]));
-            // end
-            // $write("\nx: ");
-            // for (int j = 0; j < N*N; j++) begin
-            //     if (j%N == 0) begin
-            //         $display("");
-            //     end
-            //     $write("%p ", $bitstoshortreal(dut.x[j / N][j % N]));
-            // end
-            // $write("\nw: ");
-            // for (int j = 0; j < N*N; j++) begin
-            //     if (j%N == 0) begin
-            //         $display("");
-            //     end
-            //     $write("%p ", $bitstoshortreal(dut.w[j / N][j % N]));
-            // end
-            // $write("\npsum: ");
-            // for (int j = 0; j < N*N; j++) begin
-            //     if (j%N == 0) begin
-            //         $display("");
-            //     end
-            //     $write("%p ", $bitstoshortreal(dut.psum[j / N][j % N]));
-            // end
-            // $display("");
+            $display("\nCycle %0d", i+1);
+            $write("x_in: ");
+            for (int j = 0; j < N; j++) begin
+                $write("%08p ", $bitstoshortreal(x_in[j]));
+            end
+            $write("\nw_in: ");
+            for (int j = 0; j < N; j++) begin
+                $write("%08p ", $bitstoshortreal(w_in[j]));
+            end
+            $write("\nx: ");
+            for (int j = 0; j < N*N; j++) begin
+                if (j%N == 0) begin
+                    $display("");
+                end
+                $write("%08p ", $bitstoshortreal(dut.x[j / N][j % N]));
+            end
+            $write("\nw: ");
+            for (int j = 0; j < N*N; j++) begin
+                if (j%N == 0) begin
+                    $display("");
+                end
+                $write("%08p ", $bitstoshortreal(dut.w[j / N][j % N]));
+            end
+            $write("\npsum: ");
+            for (int j = 0; j < N*N; j++) begin
+                if (j%N == 0) begin
+                    $display("");
+                end
+                $write("%08p ", $bitstoshortreal(dut.psum[j / N][j % N]));
+            end
+            $display("");
+            $display("count: %d", dut.row[N-1].col[N-1].pe.count);
         end
         while (stall) @(posedge clk);
         $fclose(fd);

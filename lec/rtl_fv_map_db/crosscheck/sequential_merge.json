@@ -1,0 +1,150 @@
+{
+ "filetype": "conformal-table",
+ "data": [
+  {
+   "Object": "/u_controller/input_addr_reg[17]",
+   "Type": "DFF",
+   "Design": "G",
+   "User Setup representative": "/u_controller/input_addr[16]",
+   "LEC representative": "/u_controller/input_addr_reg[16]",
+   "User Setup phase": "+",
+   "LEC phase": "+",
+   "highlite": 1,
+   "Object:style": "color:red",
+   "Type:style": "color:red",
+   "Design:style": "color:red",
+   "User Setup representative:style": "color:red",
+   "LEC representative:style": "color:red",
+   "User Setup phase:style": "color:red",
+   "LEC phase:style": "color:red"
+  },
+  {
+   "Object": "/u_controller/input_addr_reg[18]",
+   "Type": "DFF",
+   "Design": "G",
+   "User Setup representative": "/u_controller/input_addr[16]",
+   "LEC representative": "/u_controller/input_addr_reg[16]",
+   "User Setup phase": "+",
+   "LEC phase": "+",
+   "highlite": 1,
+   "Object:style": "color:red",
+   "Type:style": "color:red",
+   "Design:style": "color:red",
+   "User Setup representative:style": "color:red",
+   "LEC representative:style": "color:red",
+   "User Setup phase:style": "color:red",
+   "LEC phase:style": "color:red"
+  },
+  {
+   "Object": "/u_controller/input_addr_reg[19]",
+   "Type": "DFF",
+   "Design": "G",
+   "User Setup representative": "/u_controller/input_addr[16]",
+   "LEC representative": "/u_controller/input_addr_reg[16]",
+   "User Setup phase": "+",
+   "LEC phase": "+",
+   "highlite": 1,
+   "Object:style": "color:red",
+   "Type:style": "color:red",
+   "Design:style": "color:red",
+   "User Setup representative:style": "color:red",
+   "LEC representative:style": "color:red",
+   "User Setup phase:style": "color:red",
+   "LEC phase:style": "color:red"
+  },
+  {
+   "Object": "/u_controller/weight_addr_reg[16]",
+   "Type": "DFF",
+   "Design": "G",
+   "User Setup representative": "/u_controller/weight_addr[0]",
+   "LEC representative": "/u_controller/weight_addr_reg[0]",
+   "User Setup phase": "+",
+   "LEC phase": "+",
+   "highlite": 1,
+   "Object:style": "color:red",
+   "Type:style": "color:red",
+   "Design:style": "color:red",
+   "User Setup representative:style": "color:red",
+   "LEC representative:style": "color:red",
+   "User Setup phase:style": "color:red",
+   "LEC phase:style": "color:red"
+  },
+  {
+   "Object": "/u_controller/weight_addr_reg[17]",
+   "Type": "DFF",
+   "Design": "G",
+   "User Setup representative": "/u_controller/weight_addr[0]",
+   "LEC representative": "/u_controller/weight_addr_reg[0]",
+   "User Setup phase": "+",
+   "LEC phase": "+",
+   "highlite": 1,
+   "Object:style": "color:red",
+   "Type:style": "color:red",
+   "Design:style": "color:red",
+   "User Setup representative:style": "color:red",
+   "LEC representative:style": "color:red",
+   "User Setup phase:style": "color:red",
+   "LEC phase:style": "color:red"
+  },
+  {
+   "Object": "/u_controller/weight_addr_reg[18]",
+   "Type": "DFF",
+   "Design": "G",
+   "User Setup representative": "/u_controller/weight_addr[0]",
+   "LEC representative": "/u_controller/weight_addr_reg[0]",
+   "User Setup phase": "+",
+   "LEC phase": "+",
+   "highlite": 1,
+   "Object:style": "color:red",
+   "Type:style": "color:red",
+   "Design:style": "color:red",
+   "User Setup representative:style": "color:red",
+   "LEC representative:style": "color:red",
+   "User Setup phase:style": "color:red",
+   "LEC phase:style": "color:red"
+  },
+  {
+   "Object": "/u_controller/weight_addr_reg[19]",
+   "Type": "DFF",
+   "Design": "G",
+   "User Setup representative": "/u_controller/weight_addr[0]",
+   "LEC representative": "/u_controller/weight_addr_reg[0]",
+   "User Setup phase": "+",
+   "LEC phase": "+",
+   "highlite": 1,
+   "Object:style": "color:red",
+   "Type:style": "color:red",
+   "Design:style": "color:red",
+   "User Setup representative:style": "color:red",
+   "LEC representative:style": "color:red",
+   "User Setup phase:style": "color:red",
+   "LEC phase:style": "color:red"
+  }
+ ],
+ "cols": [
+  {
+   "key": "Object"
+  },
+  {
+   "key": "Type"
+  },
+  {
+   "key": "Design"
+  },
+  {
+   "key": "User Setup representative"
+  },
+  {
+   "key": "LEC representative"
+  },
+  {
+   "key": "User Setup phase"
+  },
+  {
+   "key": "LEC phase"
+  }
+ ],
+ "sort": [
+  "-highlite"
+ ]
+}

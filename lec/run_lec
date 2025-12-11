@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Find the *_lec.tcl file
+LEC_FILE=$(ls *_lec.tcl 2>/dev/null | head -n 1)
+
+if [ -z "$LEC_FILE" ]; then
+    echo "ERROR: No *_lec.tcl file found!"
+    exit 1
+fi
+
+echo "Found LEC script: $LEC_FILE"
+
+# Insert commands before 'exit -f'
+sed -i.bak '/^exit -f/i \
+\nset gate report -use_library_pinname \
+\nrep map po -long > ../synthesis/outputs/mapped.rpt \
+\n' "$LEC_FILE"
+
+echo "Commands inserted before exit -f"
+
+# To run LEC in terminal (without GUI)
+lec -XL -nogui -color -64 -dofile *_lec.tcl
+
+# To run LEC in GUI
+#lec -XL -color -64 -dofile *lec.tcl
